@@ -27,6 +27,7 @@ export function Header() {
         { label: t('nav.home'), to: '/' },
         { label: t('nav.blog'), to: '/articles' },
         { label: t('nav.projects'), to: '/projects' },
+        { label: t('nav.videos'), to: '/videos' },
         { label: t('nav.resources'), to: '/resources' },
         { label: t('nav.about'), to: '/about' },
     ];

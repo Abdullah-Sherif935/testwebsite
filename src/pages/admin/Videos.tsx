@@ -162,22 +162,30 @@ export function AdminVideos() {
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-sm font-semibold">
-                            <th className="px-6 py-4">Title / Video ID</th>
-                            <th className="px-6 py-4">Article Slug</th>
+                            <th className="px-6 py-4">Title / ID</th>
+                            <th className="px-6 py-4">Views</th>
+                            <th className="px-6 py-4">Published</th>
+                            <th className="px-6 py-4">Article</th>
                             <th className="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {loading ? (
-                            <tr><td colSpan={3} className="px-6 py-10 text-center">Loading...</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-10 text-center">Loading...</td></tr>
                         ) : videos.length === 0 ? (
-                            <tr><td colSpan={3} className="px-6 py-10 text-center text-slate-500">No videos added yet</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-10 text-center text-slate-500">No videos added yet</td></tr>
                         ) : (
                             videos.map((video) => (
                                 <tr key={video.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-medium text-slate-900 dark:text-white">{video.title}</div>
-                                        <div className="text-xs text-blue-500 font-mono tracking-wider">{video.video_id}</div>
+                                        <div className="font-medium text-slate-900 dark:text-white line-clamp-1">{video.title}</div>
+                                        <div className="text-[10px] text-blue-500 font-mono tracking-wider">{video.youtube_video_id || video.video_id}</div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm font-bold text-red-600">
+                                        {video.view_count?.toLocaleString() || '0'}
+                                    </td>
+                                    <td className="px-6 py-4 text-xs text-slate-500">
+                                        {video.published_at ? new Date(video.published_at).toLocaleDateString() : '-'}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-500">
                                         {video.related_article_slug || '-'}

@@ -13,6 +13,7 @@ import { Articles } from './pages/Articles/index';
 import { ArticleDetail } from './pages/Articles/ArticleDetail';
 import { Resources } from './pages/Resources';
 import { About } from './pages/About';
+import { Videos } from './pages/Videos';
 import { NotFound } from './pages/NotFound';
 
 // Admin Pages
@@ -50,6 +51,7 @@ function App() {
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:slug" element={<ProjectDetail />} />
           <Route path="/resources" element={<Resources />} />
+          <Route path="/videos" element={<Videos />} />
           <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

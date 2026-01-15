@@ -165,9 +165,11 @@ export function Hero() {
                                 <motion.div key={video.id} variants={fadeInUp}>
                                     <VideoItem
                                         title={video.title}
-                                        videoId={getYouTubeId(video.youtube_url)}
+                                        videoId={video.youtube_video_id || getYouTubeId(video.youtube_url)}
                                         videoUrl={video.youtube_url}
                                         thumbnailUrl={video.thumbnail_url}
+                                        viewCount={video.view_count}
+                                        publishedAt={video.published_at}
                                     />
                                 </motion.div>
                             ))}
