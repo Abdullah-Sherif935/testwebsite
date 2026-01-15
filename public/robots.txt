@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://eng-abdullah-sherif.com/sitemap.xml

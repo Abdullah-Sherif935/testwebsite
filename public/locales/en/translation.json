@@ -1,0 +1,93 @@
+{
+    "app": {
+        "title": "Abdullah Sherif",
+        "welcome": "Welcome"
+    },
+    "hero": {
+        "title": "Abdullah Sherif",
+        "subtitle": "Mechatronics Engineer · Technical Content Creator",
+        "description": "Sharing practical engineering explanations, downloadable files, and applied technical knowledge. Deep-diving into concepts that go beyond 10-minute videos.",
+        "cta": {
+            "library": "File Library",
+            "youtube": "YouTube Channel"
+        },
+        "latestVideos": "Latest on YouTube"
+    },
+    "nav": {
+        "home": "Home",
+        "blog": "Tutorials",
+        "projects": "Projects",
+        "resources": "File Library",
+        "about": "About Me",
+        "youtube": "YouTube Channel"
+    },
+    "sections": {
+        "resources": {
+            "title": "File & Resource Library",
+            "subtitle": "Download diagrams, source code, and study guides from my videos.",
+            "viewAll": "Browse Library / Files",
+            "download": "Download Files"
+        },
+        "blog": {
+            "title": "Written Breakdown",
+            "subtitle": "Detailed articles complementing the video content.",
+            "viewAll": "Browse All Articles"
+        }
+    },
+    "cards": {
+        "views": "{{views}} views",
+        "watch": "Watch Video",
+        "download": "Download Files",
+        "readTime": "{{count}} min read",
+        "searchPlaceholder": "Search topics...",
+        "all": "All",
+        "newest": "Newest",
+        "oldest": "Oldest",
+        "articleCount": "{{count}} article(s)",
+        "noArticles": "No articles found",
+        "noResources": "No resources found",
+        "readMore": "Read more →",
+        "resourceCount": "{{count}} file(s)"
+    },
+    "article": {
+        "notFound": {
+            "title": "Article not found",
+            "description": "Sorry, we couldn't find the requested article."
+        },
+        "noContent": {
+            "title": "Content unavailable",
+            "description": "Sorry, there is no content available for this article at the moment."
+        },
+        "attachments": "Attachments & Technical Files",
+        "backToArticles": "Back to Articles",
+        "backToAll": "Back to all articles"
+    },
+    "notFound": {
+        "title": "404",
+        "message": "Page not found",
+        "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
+        "home": "Return Home",
+        "articles": "Browse Articles"
+    },
+    "seo": {
+        "home": {
+            "title": "Engineering Tutorials & Technical Insights | Abdullah Sherif",
+            "description": "A dedicated platform for Mechatronics engineering and programming. Practical tutorials, source codes, and comprehensive learning resources."
+        },
+        "articles": {
+            "title": "Technical Articles & Tutorials | Abdullah Sherif",
+            "description": "In-depth engineering articles covering Robotics, Control Systems, and Programming. Deep dives complementing the video content."
+        },
+        "resources": {
+            "title": "Engineering File Library | Abdullah Sherif",
+            "description": "Download free engineering diagrams, source codes, and project files used in the tutorials."
+        },
+        "about": {
+            "title": "About Me | Abdullah Sherif - Mechatronics Engineer",
+            "description": "Meet Abdullah Sherif, a Mechatronics Engineer and technical content creator dedicated to simplifying complex engineering concepts."
+        }
+    },
+    "footer": {
+        "copyright": "© {{year}} Abdullah Sherif. All rights reserved."
+    }
+}
