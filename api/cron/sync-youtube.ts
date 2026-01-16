@@ -1,84 +1,76 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 export const config = {
     runtime: 'nodejs',
 };
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY!;
-const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID!;
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 const supabase = createClient(
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export default async function handler() {
+export default async function handler(
+    req: VercelRequest,
+    res: VercelResponse
+) {
     try {
-        // 1️⃣ هات آخر 10 فيديوهات
-        const searchRes = await fetch(
-            `https://www.googleapis.com/youtube/v3/search` +
-            `?key=${YOUTUBE_API_KEY}` +
-            `&channelId=${YOUTUBE_CHANNEL_ID}` +
-            `&part=snippet` +
-            `&order=date` +
-            `&type=video` +
-            `&maxResults=10`
-        );
+        const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY!;
+        const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID!;
 
-        if (!searchRes.ok) {
-            throw new Error('YouTube search failed');
+        if (!YOUTUBE_API_KEY || !YOUTUBE_CHANNEL_ID) {
+            return res.status(500).json({ error: 'Missing env vars' });
         }
 
-        const searchData: any = await searchRes.json();
-
-        const videoIds = searchData.items.map(
-            (item: any) => item.id.videoId
+        // 1️⃣ Get latest videos
+        const searchRes = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?` +
+            `key=${YOUTUBE_API_KEY}` +
+            `&channelId=${YOUTUBE_CHANNEL_ID}` +
+            `&part=snippet` +
+            `&order=date&type=video&maxResults=10`
         );
 
-        // 2️⃣ هات عدد المشاهدات
+        const searchData = await searchRes.json();
+
+        const videoIds = searchData.items.map(
+            (v: any) => v.id.videoId
+        );
+
+        // 2️⃣ Get views
         const statsRes = await fetch(
-            `https://www.googleapis.com/youtube/v3/videos` +
-            `?key=${YOUTUBE_API_KEY}` +
+            `https://www.googleapis.com/youtube/v3/videos?` +
+            `key=${YOUTUBE_API_KEY}` +
             `&id=${videoIds.join(',')}` +
             `&part=statistics`
         );
 
-        if (!statsRes.ok) {
-            throw new Error('YouTube stats failed');
-        }
+        const statsData = await statsRes.json();
 
-        const statsData: any = await statsRes.json();
-
-        const statsMap = new Map(
+        const viewsMap = new Map(
             statsData.items.map((v: any) => [
                 v.id,
                 Number(v.statistics.viewCount || 0),
             ])
         );
 
-        // 3️⃣ خزّن في Supabase
-        for (const item of searchData.items) {
+        // 3️⃣ Save to Supabase
+        for (const v of searchData.items) {
             await supabase.from('videos').upsert({
-                youtube_video_id: item.id.videoId,
-                title: item.snippet.title,
-                description: item.snippet.description,
-                youtube_url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-                thumbnail_url: item.snippet.thumbnails.high?.url,
-                published_at: item.snippet.publishedAt,
-                view_count: statsMap.get(item.id.videoId) || 0,
+                youtube_video_id: v.id.videoId,
+                title: v.snippet.title,
+                description: v.snippet.description,
+                youtube_url: `https://youtube.com/watch?v=${v.id.videoId}`,
+                thumbnail_url: v.snippet.thumbnails.high?.url,
+                published_at: v.snippet.publishedAt,
+                view_count: viewsMap.get(v.id.videoId) || 0,
             });
         }
 
-        return new Response(
-            JSON.stringify({ success: true }),
-            { status: 200 }
-        );
+        return res.status(200).json({ success: true });
     } catch (err: any) {
-        return new Response(
-            JSON.stringify({ error: err.message }),
-            { status: 500 }
-        );
+        return res.status(500).json({
+            error: err.message,
+        });
     }
 }
