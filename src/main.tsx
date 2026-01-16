@@ -10,7 +10,7 @@ import { ThemeProvider } from './context/ThemeContext.tsx';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HelmetProvider>
-      <BrowserRouter basename="/testwebsite/">
+      <BrowserRouter>
         <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
           <Suspense fallback={
             <div className="flex items-center justify-center min-h-screen bg-white dark:bg-slate-950">
