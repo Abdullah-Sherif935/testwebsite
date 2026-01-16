@@ -2,76 +2,67 @@ import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 import fetch from 'node-fetch';
 
-/**
- * Sync YouTube Videos to Supabase
- * Script context: Node.js (Background Process)
- */
-
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // NEVER expose to frontend
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 const CHANNEL_ID = 'UCC-SXz7nymdUw9VXogzUosQ';
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !YOUTUBE_API_KEY) {
-    console.error('❌ Missing environment variables. Please check your secrets.');
-    process.exit(1);
-}
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+// دالة لتحويل مدة يوتيوب (ISO 8601) إلى ثواني
+function parseDuration(duration) {
+    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    const hours = parseInt(match[1] || 0);
+    const minutes = parseInt(match[2] || 0);
+    const seconds = parseInt(match[3] || 0);
+    return (hours * 3600) + (minutes * 60) + seconds;
+}
+
 async function syncYouTube() {
-    console.log('🔄 Starting Comprehensive YouTube Synchronization...');
+    console.log('🔄 جاري بدء المزامنة الذكية وتصنيف الفيديوهات...');
 
     try {
-        // 1. Fetch latest 10 videos via Search API
-        const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=10&type=video`;
+        // 1. جلب آخر 15 فيديو لضمان تغطية الجديد
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=15&type=video`;
         const searchRes = await fetch(searchUrl);
         const searchData = await searchRes.json();
 
-        if (searchData.error) throw new Error(`YouTube Search error: ${searchData.error.message}`);
-        if (!searchData.items?.length) {
-            console.log('⚠️ No videos found for this channel.');
-            return;
-        }
+        if (searchData.error) throw new Error(searchData.error.message);
 
         const videoIds = searchData.items.map(item => item.id.videoId).join(',');
-        console.log(`🔍 Found ${searchData.items.length} latest videos. Fetching details...`);
 
-        // 2. Fetch specific details (Statistics & Snippet)
-        const statsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${YOUTUBE_API_KEY}&id=${videoIds}&part=statistics,snippet`;
+        // 2. جلب التفاصيل مع مدة الفيديو (contentDetails)
+        const statsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${YOUTUBE_API_KEY}&id=${videoIds}&part=statistics,snippet,contentDetails`;
         const statsRes = await fetch(statsUrl);
         const statsData = await statsRes.json();
 
-        if (statsData.error) throw new Error(`YouTube Stats error: ${statsData.error.message}`);
+        // 3. معالجة البيانات وتحديد الـ Shorts
+        const updates = statsData.items.map(item => {
+            const durationInSeconds = parseDuration(item.contentDetails.duration);
+            const isShorts = durationInSeconds < 120; // أقل من دقيقتين (120 ثانية)
 
-        // 3. Prepare data for Upsert
-        const updates = statsData.items?.map(item => ({
-            video_id: item.id,
-            title: item.snippet?.title || 'Untitled Video',
-            view_count: parseInt(item.statistics?.viewCount || '0'),
-            thumbnail_url: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.default?.url,
-            youtube_url: `https://www.youtube.com/watch?v=${item.id}`,
-            published_at: item.snippet?.publishedAt || new Date().toISOString(),
-        })) || [];
+            return {
+                video_id: item.id,
+                title: item.snippet.title,
+                view_count: parseInt(item.statistics.viewCount || '0'),
+                thumbnail_url: item.snippet.thumbnails.high.url,
+                youtube_url: `https://www.youtube.com/watch?v=${item.id}`,
+                published_at: item.snippet.publishedAt,
+                is_shorts: isShorts
+                // لاحظ: لم نضع category هنا لكي لا نمسح القيم اليدوية
+            };
+        });
 
-        console.log(`📡 Processing upsert for ${updates.length} records...`);
+        console.log(`📡 جاري تحديث ${updates.length} فيديو في الداتابيز...`);
 
-        // 4. Perform Upsert in Supabase
-        const { data, error } = await supabase
-            .from('videos')
-            .upsert(updates, {
-                onConflict: 'video_id',
-                ignoreDuplicates: false
-            });
+        // 4. تنفيذ الـ Upsert
+        const { error } = await supabase.from('videos').upsert(updates, { onConflict: 'video_id' });
 
         if (error) throw error;
-
-        console.log('✅ Successfully synced new videos and updated view counts!');
-        process.exit(0);
+        console.log('✅ تمت المزامنة بنجاح وفصل الـ Shorts تلقائياً!');
 
     } catch (err) {
-        console.error('🚨 Automation Failed:', err.message);
-        process.exit(1);
+        console.error('🚨 فشلت الأتمتة:', err.message);
     }
 }
 

@@ -45,6 +45,7 @@ export async function getLatestVideos(limit = 3): Promise<Video[]> {
         const { data: videos, error } = await supabase
             .from('videos')
             .select('*')
+            .eq('is_shorts', false) // تجنب فيديوهات الـ Shorts
             .order('published_at', { ascending: false, nullsFirst: false })
             .limit(limit);
 

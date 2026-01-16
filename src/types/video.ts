@@ -10,5 +10,6 @@ export interface Video {
     view_count?: number;
     published_at?: string;
     related_article_slug?: string;
+    is_shorts?: boolean;
     created_at: string;
 }

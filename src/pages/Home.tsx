@@ -9,8 +9,11 @@ import { Helmet } from 'react-helmet-async';
 import { fadeInUp, staggerContainer, pageTransition } from '../utils/animations';
 import { getLatestArticles } from '../services/articles';
 import { getResources } from '../services/resources';
+import { getLatestVideos } from '../services/videos';
+import { VideoItem } from '../components/common/VideoItem';
 import type { Article } from '../types/article';
 import type { Resource } from '../types/resource';
+import type { Video } from '../types/video';
 
 export function Home() {
     const { t, i18n } = useTranslation();
@@ -19,6 +22,7 @@ export function Home() {
     // Start with empty arrays to ensure we see the REAL data from Supabase
     const [articles, setArticles] = useState<Article[]>([]);
     const [resources, setResources] = useState<Resource[]>([]);
+    const [videos, setVideos] = useState<Video[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,10 +30,12 @@ export function Home() {
         // Load Articles & Resources in parallel
         Promise.all([
             getLatestArticles(3),
-            getResources()
-        ]).then(([articlesData, resourcesData]) => {
+            getResources(),
+            getLatestVideos(3)
+        ]).then(([articlesData, resourcesData, videosData]) => {
             setArticles(articlesData);
             setResources(resourcesData);
+            setVideos(videosData);
             setLoading(false);
         }).catch(err => {
             console.error('Error in Home data fetch:', err);
@@ -128,6 +134,52 @@ export function Home() {
                                         label: t('sections.resources.download'),
                                         onClick: () => window.open(resource.url, '_blank')
                                     }}
+                                />
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                </motion.div>
+            </section>
+
+            {/* Latest Videos Section */}
+            <section className="py-20 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
+                <motion.div
+                    className="container mx-auto px-4"
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
+                >
+                    <motion.div
+                        className="flex justify-between items-end mb-12"
+                        variants={fadeInUp}
+                    >
+                        <div>
+                            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-red-400 dark:from-red-500 dark:to-orange-400">
+                                {isArabic ? 'أحدث الفيديوهات' : 'Latest Videos'}
+                            </h2>
+                            <p className="text-slate-600 dark:text-slate-400 max-w-xl">
+                                {isArabic ? 'شروحات تقنية وأفكار هندسية من قناتنا على اليوتيوب' : 'Technical tutorials and engineering insights from our YouTube channel'}
+                            </p>
+                        </div>
+                        <Link to="/videos" className="hidden md:block text-red-600 dark:text-red-500 font-medium hover:underline">
+                            {isArabic ? 'عرض الكل' : 'View All'}
+                        </Link>
+                    </motion.div>
+
+                    <motion.div
+                        className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+                        variants={staggerContainer}
+                    >
+                        {videos.map((video) => (
+                            <motion.div key={video.id} variants={fadeInUp}>
+                                <VideoItem
+                                    title={video.title}
+                                    videoId={video.video_id || ''}
+                                    videoUrl={video.youtube_url}
+                                    thumbnailUrl={video.thumbnail_url}
+                                    viewCount={video.view_count}
+                                    publishedAt={video.published_at}
                                 />
                             </motion.div>
                         ))}
