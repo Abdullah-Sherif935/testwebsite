@@ -17,7 +17,7 @@ i18n
         },
 
         backend: {
-            loadPath: '/locales/{{lng}}/{{ns}}.json',
+            loadPath: '/testwebsite/locales/{{lng}}/{{ns}}.json',
         }
     });
 

@@ -18,7 +18,7 @@ export function AboutHeroImage() {
             {/* Main Image Container - Clear Oval (Ellipse) */}
             <div className="relative z-10 w-64 h-80 lg:w-[320px] lg:h-[420px] mx-auto overflow-hidden rounded-[50%_50%_50%_50%_/_50%_50%_50%_50%] border-4 border-white/10 shadow-[0_0_50px_rgba(59,130,246,0.3)] transition-transform duration-700 group-hover:scale-[1.03]">
                 <img
-                    src="/assets/images/about-profile.jpg"
+                    src="/testwebsite/assets/images/about-profile.jpg"
                     alt={name}
                     className="w-full h-full object-cover object-center scale-110 group-hover:scale-105 transition-transform duration-700"
                 />

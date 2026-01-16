@@ -61,7 +61,6 @@ export function AdminArticles() {
                         <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                             <th className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">Title</th>
                             <th className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">Category</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">Status</th>
                             <th className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">Created At</th>
                             <th className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white text-right">Actions</th>
                         </tr>
@@ -93,14 +92,6 @@ export function AdminArticles() {
                                     <td className="px-6 py-4">
                                         <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-xs font-semibold uppercase tracking-wider">
                                             {article.category}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${article.status === 'published'
-                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                                            }`}>
-                                            {article.status || 'draft'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">

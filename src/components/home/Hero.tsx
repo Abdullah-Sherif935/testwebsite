@@ -63,7 +63,7 @@ export function Hero() {
                             {/* Inner Image Container */}
                             <div className="absolute inset-0 border-4 border-white dark:border-slate-200/10 rounded-full overflow-hidden shadow-2xl bg-gradient-to-b from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-900">
                                 <img
-                                    src="/assets/images/personal-final.png"
+                                    src="/testwebsite/assets/images/personal-final.png"
                                     alt="Abdullah Sherif"
                                     className="w-full h-full object-cover"
                                 />
