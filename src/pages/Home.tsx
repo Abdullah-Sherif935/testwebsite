@@ -94,6 +94,50 @@ export function Home() {
             </Helmet>
             <Hero />
 
+            {/* Latest Videos Section */}
+            <section className="py-20 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
+                <motion.div
+                    className="container mx-auto px-4"
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
+                >
+                    <motion.div
+                        className="flex justify-between items-end mb-12"
+                        variants={fadeInUp}
+                    >
+                        <div>
+                            <h3 className="text-sm font-bold text-red-500 mb-0 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                                {isArabic ? 'أحدث الشروحات المرئية' : 'Latest Video Tutorials'}
+                            </h3>
+                        </div>
+                        <Link to="/videos" className="hidden md:block text-red-600 dark:text-red-500 font-medium hover:underline">
+                            {isArabic ? 'عرض الكل' : 'View All'}
+                        </Link>
+                    </motion.div>
+
+                    <motion.div
+                        className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+                        variants={staggerContainer}
+                    >
+                        {videos.map((video) => (
+                            <motion.div key={video.id} variants={fadeInUp}>
+                                <VideoItem
+                                    title={video.title}
+                                    videoId={video.video_id || ''}
+                                    videoUrl={video.youtube_url}
+                                    thumbnailUrl={video.thumbnail_url}
+                                    viewCount={video.view_count}
+                                    publishedAt={video.published_at}
+                                />
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                </motion.div>
+            </section>
+
             {/* Featured Resources Section */}
             <section className="py-20 bg-slate-50 dark:bg-slate-900/50 relative border-y border-slate-200 dark:border-slate-800">
                 <motion.div
@@ -141,51 +185,6 @@ export function Home() {
                 </motion.div>
             </section>
 
-            {/* Latest Videos Section */}
-            <section className="py-20 bg-white dark:bg-[#020617] border-b border-slate-200 dark:border-slate-800">
-                <motion.div
-                    className="container mx-auto px-4"
-                    variants={staggerContainer}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, amount: 0.2 }}
-                >
-                    <motion.div
-                        className="flex justify-between items-end mb-12"
-                        variants={fadeInUp}
-                    >
-                        <div>
-                            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-red-400 dark:from-red-500 dark:to-orange-400">
-                                {isArabic ? 'أحدث الفيديوهات' : 'Latest Videos'}
-                            </h2>
-                            <p className="text-slate-600 dark:text-slate-400 max-w-xl">
-                                {isArabic ? 'شروحات تقنية وأفكار هندسية من قناتنا على اليوتيوب' : 'Technical tutorials and engineering insights from our YouTube channel'}
-                            </p>
-                        </div>
-                        <Link to="/videos" className="hidden md:block text-red-600 dark:text-red-500 font-medium hover:underline">
-                            {isArabic ? 'عرض الكل' : 'View All'}
-                        </Link>
-                    </motion.div>
-
-                    <motion.div
-                        className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-                        variants={staggerContainer}
-                    >
-                        {videos.map((video) => (
-                            <motion.div key={video.id} variants={fadeInUp}>
-                                <VideoItem
-                                    title={video.title}
-                                    videoId={video.video_id || ''}
-                                    videoUrl={video.youtube_url}
-                                    thumbnailUrl={video.thumbnail_url}
-                                    viewCount={video.view_count}
-                                    publishedAt={video.published_at}
-                                />
-                            </motion.div>
-                        ))}
-                    </motion.div>
-                </motion.div>
-            </section>
 
             {/* Blog Section */}
             <section className="py-20 bg-white dark:bg-[#020617] border-t border-slate-200 dark:border-slate-800">

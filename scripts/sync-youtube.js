@@ -27,7 +27,7 @@ async function syncYouTube() {
 
     try {
         // 1. جلب IDs الفيديوهات الأخيرة
-        const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=15&type=video`;
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=50&type=video`;
         const searchRes = await fetch(searchUrl);
         const searchData = await searchRes.json();
 

@@ -1,33 +1,12 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { VideoItem } from '../common/VideoItem';
 import { TechBackground } from '../common/TechBackground';
 import { fadeInUp, staggerContainer, scaleIn, buttonHover, buttonTap } from '../../utils/animations';
-import { getLatestVideos } from '../../services/videos';
-import type { Video } from '../../types/video';
 
 export function Hero() {
     const { t, i18n } = useTranslation();
-    const [videos, setVideos] = useState<Video[]>([]);
-    const [loading, setLoading] = useState(true);
-
     const isArabic = i18n.language === 'ar';
-
-    useEffect(() => {
-        getLatestVideos(3).then((data) => {
-            setVideos(data);
-            setLoading(false);
-        });
-    }, []);
-
-    const getYouTubeId = (url: string) => {
-        if (!url) return '';
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : '';
-    };
 
     // Helper to split subtitle safely
     const subtitleParts = t('hero.subtitle').split(' · ');
@@ -138,44 +117,6 @@ export function Hero() {
                     </motion.div>
                 </div>
 
-                {/* Videos Section Moved Below Grid */}
-                <div className="mt-24">
-                    <motion.h3
-                        className="text-sm font-bold text-red-500 mb-6 flex items-center gap-2"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                    >
-                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
-                        </svg>
-                        {t('hero.latestVideos')}
-                    </motion.h3>
-
-                    {/* Video Grid - 3 Columns */}
-                    {!loading && videos.length > 0 ? (
-                        <motion.div
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                            variants={staggerContainer}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                        >
-                            {videos.map((video) => (
-                                <motion.div key={video.id} variants={fadeInUp}>
-                                    <VideoItem
-                                        title={video.title}
-                                        videoId={video.youtube_video_id || getYouTubeId(video.youtube_url)}
-                                        videoUrl={video.youtube_url}
-                                        thumbnailUrl={video.thumbnail_url}
-                                        viewCount={video.view_count}
-                                        publishedAt={video.published_at}
-                                    />
-                                </motion.div>
-                            ))}
-                        </motion.div>
-                    ) : null}
-                </div>
             </div>
         </section>
     );
