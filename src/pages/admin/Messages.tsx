@@ -246,6 +246,9 @@ export function AdminMessages() {
                                                 </>
                                             ) : (
                                                 <>
+                                                    {!msg.is_read && (
+                                                        <ActionButton onClick={() => handleMarkAsRead(msg.id)} icon="👁️" label="Mark as read" />
+                                                    )}
                                                     <ActionButton onClick={() => handleToggleArchive(msg)} icon={msg.is_archived ? "📤" : "📦"} label={msg.is_archived ? "Unarchive" : "Archive"} />
                                                     <ActionButton onClick={() => handleMoveToTrash(msg.id)} icon="🗑️" label="Trash" color="red" />
                                                 </>
@@ -282,8 +285,8 @@ export function AdminMessages() {
                                                 setReplyText('');
                                             }}
                                             className={`px-10 py-3 rounded-2xl text-sm font-black transition-all shadow-lg transform hover:-translate-y-1 active:scale-95 ${msg.reply_text
-                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                                                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20'
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20'
                                                 }`}
                                         >
                                             {replyingTo === msg.id ? 'Cancel' : msg.reply_text ? 'Reply Again' : 'Reply From Site'}
@@ -335,8 +338,8 @@ function Card({ icon, label, count, isActive, onClick, color }: any) {
         <button
             onClick={onClick}
             className={`p-6 rounded-[2.5rem] border transition-all text-left relative overflow-hidden group ${isActive
-                    ? 'border-current shadow-xl scale-105 z-10 bg-white dark:bg-slate-900'
-                    : 'border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50'
+                ? 'border-current shadow-xl scale-105 z-10 bg-white dark:bg-slate-900'
+                : 'border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50'
                 } ${colorClasses[color]}`}
         >
             <span className="text-4xl mb-4 block group-hover:scale-125 transition-transform duration-500">{icon}</span>
