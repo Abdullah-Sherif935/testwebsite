@@ -8,6 +8,21 @@ export function AdminVideos() {
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [filter, setFilter] = useState<'all' | 'shorts' | 'long'>('all'); // Filter state
+
+    // Calculate stats
+    const stats = {
+        total: videos.length,
+        shorts: videos.filter(v => v.is_shorts).length,
+        long: videos.filter(v => !v.is_shorts).length
+    };
+
+    // Filter videos for display
+    const filteredVideos = videos.filter(v => {
+        if (filter === 'shorts') return v.is_shorts;
+        if (filter === 'long') return !v.is_shorts;
+        return true;
+    });
 
     const [formData, setFormData] = useState({
         title: '',
@@ -22,7 +37,7 @@ export function AdminVideos() {
     async function fetchInitialData() {
         setLoading(true);
         const [videosRes, articlesRes] = await Promise.all([
-            supabase.from('videos').select('*').order('created_at', { ascending: false }),
+            supabase.from('videos').select('*').order('published_at', { ascending: false, nullsFirst: false }),
             supabase.from('articles').select('slug, title')
         ]);
 
@@ -82,19 +97,60 @@ export function AdminVideos() {
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Videos</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Link YouTube content to your platform</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Videos Manager</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">Manage and organize your YouTube content</p>
                 </div>
                 {!isAdding && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold"
+                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
                     >
-                        ➕ Add Video
+                        <span>➕</span> Add New Video
                     </button>
                 )}
+            </div>
+
+            {/* Stats Counters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="text-6xl">📹</span>
+                    </div>
+                    <div className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Total Videos</div>
+                    <div className="text-4xl font-bold text-slate-900 dark:text-white">{stats.total}</div>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="text-6xl">⚡</span>
+                    </div>
+                    <div className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Shorts</div>
+                    <div className="text-4xl font-bold text-orange-500">{stats.shorts}</div>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span className="text-6xl">📺</span>
+                    </div>
+                    <div className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Long Videos</div>
+                    <div className="text-4xl font-bold text-blue-500">{stats.long}</div>
+                </div>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex gap-2 bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-xl w-fit border border-slate-200 dark:border-slate-800">
+                {(['all', 'videos', 'shorts'] as const).map((f) => (
+                    <button
+                        key={f}
+                        onClick={() => setFilter(f === 'videos' ? 'long' : f as any)}
+                        className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${(filter === 'long' && f === 'videos') || filter === f
+                                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                            }`}
+                    >
+                        {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                ))}
             </div>
 
             {(isAdding || editingId) && (
@@ -162,6 +218,7 @@ export function AdminVideos() {
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-sm font-semibold">
+                            <th className="px-6 py-4 text-center w-12">#</th>
                             <th className="px-6 py-4">Title / ID</th>
                             <th className="px-6 py-4">Views</th>
                             <th className="px-6 py-4">Published</th>
@@ -171,14 +228,20 @@ export function AdminVideos() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {loading ? (
-                            <tr><td colSpan={5} className="px-6 py-10 text-center">Loading...</td></tr>
-                        ) : videos.length === 0 ? (
-                            <tr><td colSpan={5} className="px-6 py-10 text-center text-slate-500">No videos added yet</td></tr>
+                            <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-500">Loading...</td></tr>
+                        ) : filteredVideos.length === 0 ? (
+                            <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-500">No videos found</td></tr>
                         ) : (
-                            videos.map((video) => (
+                            filteredVideos.map((video, index) => (
                                 <tr key={video.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                    <td className="px-6 py-4 text-center text-slate-400 font-mono text-xs">
+                                        {index + 1}
+                                    </td>
                                     <td className="px-6 py-4">
-                                        <div className="font-medium text-slate-900 dark:text-white line-clamp-1">{video.title}</div>
+                                        <div className="font-medium text-slate-900 dark:text-white line-clamp-1 flex items-center gap-2">
+                                            {video.is_shorts && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">Shorts</span>}
+                                            {video.title}
+                                        </div>
                                         <div className="text-[10px] text-blue-500 font-mono tracking-wider">{video.youtube_video_id || video.video_id}</div>
                                     </td>
                                     <td className="px-6 py-4 text-sm font-bold text-red-600">
