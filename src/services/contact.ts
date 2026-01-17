@@ -129,7 +129,11 @@ export async function sendReplyEmail(toEmail: string, toName: string, message: s
     const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
     if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
-        throw new Error('EmailJS keys are not configured in .env file');
+        const missing = [];
+        if (!SERVICE_ID) missing.push('VITE_EMAILJS_SERVICE_ID');
+        if (!TEMPLATE_ID) missing.push('VITE_EMAILJS_TEMPLATE_ID');
+        if (!PUBLIC_KEY) missing.push('VITE_EMAILJS_PUBLIC_KEY');
+        throw new Error(`Missing EmailJS keys: ${missing.join(', ')}. Please double-check your Vercel Environment Variables and Redeploy.`);
     }
 
     return emailjs.send(
