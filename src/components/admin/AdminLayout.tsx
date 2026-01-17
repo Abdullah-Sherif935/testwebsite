@@ -12,6 +12,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     };
 
     const navItems = [
+        { label: 'Analytics', path: '/admin/dashboard', icon: '📊' },
         { label: 'Articles', path: '/admin/articles', icon: '📝' },
         { label: 'Projects', path: '/admin/projects', icon: '🚀' },
         { label: 'Videos', path: '/admin/videos', icon: '🎥' },

@@ -1,3 +1,4 @@
+import { VisitorCounter } from '../common/VisitorCounter';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { buttonHover, buttonTap } from '../../utils/animations';
@@ -46,8 +47,9 @@ export function Footer() {
     return (
         <footer className="py-12 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 transition-colors">
             <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="text-slate-600 dark:text-slate-400 text-sm">
-                    {t('footer.copyright', { year: new Date().getFullYear() })}
+                <div className="flex flex-col md:flex-row items-center gap-4 text-slate-600 dark:text-slate-400 text-sm">
+                    <span>{t('footer.copyright', { year: new Date().getFullYear() })}</span>
+                    <VisitorCounter />
                 </div>
 
                 <div className="flex items-center gap-6">
