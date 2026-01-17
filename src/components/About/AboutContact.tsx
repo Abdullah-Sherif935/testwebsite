@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { aboutContent } from '../../content/aboutContent';
 import { fadeInUp, staggerContainer, buttonHover, buttonTap } from '../../utils/animations';
+import { sendContactMessage } from '../../services/contact';
 
 export function AboutContact() {
     const { i18n } = useTranslation();
-    const content = aboutContent[i18n.language === 'ar' ? 'ar' : 'en'].contactSection;
+    const isAr = i18n.language === 'ar';
+    const content = aboutContent[isAr ? 'ar' : 'en'].contactSection;
 
     const [formData, setFormData] = useState({
         name: '',
@@ -14,38 +16,30 @@ export function AboutContact() {
         message: ''
     });
 
+    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
     // Use hero content for socials from the same language
-    const socials = aboutContent[i18n.language === 'ar' ? 'ar' : 'en'].hero.socials;
+    const socials = aboutContent[isAr ? 'ar' : 'en'].hero.socials;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
+        setStatus('idle');
 
-        if (!formData.name || !formData.email || !formData.message) {
-            alert(i18n.language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Please fill all fields');
-            return;
-        }
-
-        // إنشاء رابط mailto مع البيانات
-        const subject = `رسالة من ${formData.name} عبر الموقع`;
-        const body = `الاسم: ${formData.name}%0D%0A` +
-            `البريد الإلكتروني: ${formData.email}%0D%0A%0D%0A` +
-            `الرسالة:%0D%0A${formData.message}`;
-
-        const mailtoLink = `mailto:eng.abdullah.sherif@gmail.com?subject=${encodeURIComponent(subject)}&body=${body}`;
-
-        // فتح تطبيق البريد الإلكتروني
-        window.location.href = mailtoLink;
-
-        // إظهار رسالة نجاح
-        setTimeout(() => {
-            alert(i18n.language === 'ar'
-                ? '✅ سيتم فتح تطبيق البريد الإلكتروني. يرجى إرسال الرسالة من هناك.'
-                : '✅ Your email app will open. Please send the message from there.'
-            );
-
-            // تفريغ النموذج
+        try {
+            await sendContactMessage(formData);
+            setStatus('success');
             setFormData({ name: '', email: '', message: '' });
-        }, 500);
+
+            // Success message handled in UI
+            setTimeout(() => setStatus('idle'), 5000);
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setStatus('error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -166,19 +160,53 @@ export function AboutContact() {
                                 </div>
                                 <motion.button
                                     type="submit"
-                                    className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/20 transition-all"
-                                    whileHover={buttonHover}
-                                    whileTap={buttonTap}
+                                    disabled={loading}
+                                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${status === 'success'
+                                            ? 'bg-green-600 text-white'
+                                            : status === 'error'
+                                                ? 'bg-red-600 text-white'
+                                                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/20'
+                                        } disabled:opacity-70 disabled:cursor-not-allowed`}
+                                    whileHover={!loading ? buttonHover : {}}
+                                    whileTap={!loading ? buttonTap : {}}
                                 >
-                                    {content.form.button}
+                                    {loading ? (
+                                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : status === 'success' ? (
+                                        <><span>{isAr ? '✅ تم الإرسال بنجاح' : '✅ Sent Successfully'}</span></>
+                                    ) : status === 'error' ? (
+                                        <><span>{isAr ? '❌ فشل الإرسال' : '❌ Sending Failed'}</span></>
+                                    ) : (
+                                        content.form.button
+                                    )}
                                 </motion.button>
 
-                                {/* ملاحظة توضيحية */}
-                                <p className="text-xs text-center text-slate-500 dark:text-slate-400 mt-4">
-                                    {i18n.language === 'ar'
-                                        ? '💡 سيتم فتح تطبيق البريد الإلكتروني الخاص بك لإرسال الرسالة'
-                                        : '💡 Your email app will open to send the message'}
-                                </p>
+                                <AnimatePresence>
+                                    {status === 'success' && (
+                                        <motion.p
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0 }}
+                                            className="text-sm font-medium text-center text-green-600 dark:text-green-400 mt-4"
+                                        >
+                                            {isAr
+                                                ? 'شكراً لتواصلك! سنرد عليك في أقرب وقت ممكن.'
+                                                : "Thanks for reaching out! We'll get back to you soon."}
+                                        </motion.p>
+                                    )}
+                                    {status === 'error' && (
+                                        <motion.p
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0 }}
+                                            className="text-sm font-medium text-center text-red-600 dark:text-red-400 mt-4"
+                                        >
+                                            {isAr
+                                                ? 'حدث خطأ أثناء إرسال الرسالة. يرجى المحاولة مرة أخرى.'
+                                                : 'An error occurred. Please try again later.'}
+                                        </motion.p>
+                                    )}
+                                </AnimatePresence>
                             </form>
                         </motion.div>
 

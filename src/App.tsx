@@ -26,6 +26,7 @@ import { AdminProjects } from './pages/admin/Projects';
 import { AdminProjectForm } from './pages/admin/ProjectForm';
 import { AdminProfile } from './pages/admin/Profile';
 import { Dashboard } from './pages/admin/Dashboard';
+import { AdminMessages } from './pages/admin/Messages';
 import { Projects } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
 
@@ -80,6 +81,7 @@ function App() {
                 <Route path="projects/edit/:id" element={<AdminProjectForm />} />
                 <Route path="profile" element={<AdminProfile />} />
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="messages" element={<AdminMessages />} />
                 {/* Default redirect to articles */}
                 <Route path="*" element={<AdminArticles />} />
               </Routes>

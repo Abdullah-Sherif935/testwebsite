@@ -11,6 +11,7 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@supabase/supabase-js": "^2.90.1",
     "@tiptap/extension-image": "^3.15.3",
     "@tiptap/extension-link": "^3.15.3",
