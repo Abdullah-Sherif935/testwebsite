@@ -16,6 +16,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         { label: 'Projects', path: '/admin/projects', icon: '🚀' },
         { label: 'Videos', path: '/admin/videos', icon: '🎥' },
         { label: 'Resources', path: '/admin/resources', icon: '📁' },
+        { label: 'Profile', path: '/admin/profile', icon: '👤' },
     ];
 
     return (

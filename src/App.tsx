@@ -24,6 +24,7 @@ import { AdminVideos } from './pages/admin/Videos';
 import { AdminResources } from './pages/admin/Resources';
 import { AdminProjects } from './pages/admin/Projects';
 import { AdminProjectForm } from './pages/admin/ProjectForm';
+import { AdminProfile } from './pages/admin/Profile';
 import { Projects } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
 
@@ -76,6 +77,7 @@ function App() {
                 <Route path="projects" element={<AdminProjects />} />
                 <Route path="projects/new" element={<AdminProjectForm />} />
                 <Route path="projects/edit/:id" element={<AdminProjectForm />} />
+                <Route path="profile" element={<AdminProfile />} />
                 {/* Default redirect to articles */}
                 <Route path="*" element={<AdminArticles />} />
               </Routes>

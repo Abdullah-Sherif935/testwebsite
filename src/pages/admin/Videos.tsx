@@ -144,8 +144,8 @@ export function AdminVideos() {
                         key={f}
                         onClick={() => setFilter(f === 'videos' ? 'long' : f as any)}
                         className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${(filter === 'long' && f === 'videos') || filter === f
-                                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                             }`}
                     >
                         {f.charAt(0).toUpperCase() + f.slice(1)}

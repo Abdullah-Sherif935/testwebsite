@@ -5,10 +5,19 @@ import { aboutContent } from '../../content/aboutContent';
 import { AboutHeroImage } from './AboutHeroImage';
 import { BackgroundPattern } from '../common/BackgroundPattern';
 import { fadeInUp, staggerContainer, buttonHover, buttonTap } from '../../utils/animations';
+import { useState, useEffect } from 'react';
+import { getCVUrl } from '../../services/profile';
 
 export function AboutHero() {
     const { i18n } = useTranslation();
     const content = aboutContent[i18n.language === 'ar' ? 'ar' : 'en'].hero;
+    const [cvUrl, setCvUrl] = useState<string>('#');
+
+    useEffect(() => {
+        getCVUrl().then(url => {
+            if (url) setCvUrl(url);
+        });
+    }, []);
 
     return (
         <section id="hero" className="relative py-20 overflow-hidden">
@@ -69,10 +78,12 @@ export function AboutHero() {
                                     {content.cta.labels.contact}
                                 </motion.a>
                                 <motion.a
-                                    href={content.cta.cv}
-                                    className="px-6 py-2.5 bg-transparent text-slate-600 dark:text-slate-400 rounded-xl font-bold hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center underline underline-offset-4 text-base"
-                                    whileHover={buttonHover}
-                                    whileTap={buttonTap}
+                                    href={cvUrl}
+                                    target={cvUrl !== '#' ? "_blank" : undefined}
+                                    download={cvUrl !== '#' ? "Abdullah_Sherif_CV" : undefined}
+                                    className={`px-6 py-2.5 bg-transparent text-slate-600 dark:text-slate-400 rounded-xl font-bold hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center underline underline-offset-4 text-base ${cvUrl === '#' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    whileHover={cvUrl !== '#' ? buttonHover : {}}
+                                    whileTap={cvUrl !== '#' ? buttonTap : {}}
                                 >
                                     {content.cta.labels.cv}
                                 </motion.a>
