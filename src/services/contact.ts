@@ -128,6 +128,16 @@ export async function sendReplyEmail(toEmail: string, toName: string, message: s
     const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
     const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
+    // Debug logging (remove after fixing)
+    console.log('EmailJS Debug:', {
+        hasServiceId: !!SERVICE_ID,
+        hasTemplateId: !!TEMPLATE_ID,
+        hasPublicKey: !!PUBLIC_KEY,
+        serviceIdLength: SERVICE_ID?.length || 0,
+        templateIdLength: TEMPLATE_ID?.length || 0,
+        publicKeyLength: PUBLIC_KEY?.length || 0
+    });
+
     if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
         const missing = [];
         if (!SERVICE_ID) missing.push('VITE_EMAILJS_SERVICE_ID');
