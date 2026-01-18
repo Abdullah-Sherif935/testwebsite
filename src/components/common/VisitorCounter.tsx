@@ -2,31 +2,48 @@ import { useEffect, useState } from 'react';
 import { logVisit, getDashboardStats } from '../../services/stats';
 
 export function VisitorCounter() {
-    const [views, setViews] = useState<number | null>(null);
+    const [views, setViews] = useState<number>(0);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const initCounter = async () => {
-            const hasCounted = sessionStorage.getItem('visit_counted');
+            try {
+                const hasCounted = sessionStorage.getItem('visit_counted');
 
-            // Increment logic: Log visit if new session
-            if (!hasCounted) {
-                await logVisit(window.location.pathname);
-                sessionStorage.setItem('visit_counted', 'true');
+                // Increment logic: Log visit if new session
+                if (!hasCounted) {
+                    await logVisit(window.location.pathname);
+                    sessionStorage.setItem('visit_counted', 'true');
+                }
+
+                // Fetch total views
+                const stats = await getDashboardStats(1);
+                if (stats && stats.totalViews !== undefined) {
+                    setViews(stats.totalViews);
+                } else {
+                    console.warn('Failed to load visitor stats');
+                }
+            } catch (error) {
+                console.error('VisitorCounter error:', error);
+                // Keep views at 0 on error
+            } finally {
+                setIsLoading(false);
             }
-
-            // Always fetch total for display
-            // We can optimize this by creating a lightweight RPC later if needed
-            // For now, let's just get the dashboard stats lightly or create a specific function
-            // To keep it fast, we will assume getDashboardStats is overkill for just footer.
-            // But reuse is cleaner for now.
-            const stats = await getDashboardStats(1); // minimal check
-            if (stats) setViews(stats.totalViews);
         };
 
         initCounter();
     }, []);
 
-    if (views === null) return null;
+    if (isLoading) {
+        return (
+            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
+                <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-slate-300 dark:bg-slate-700 rounded-full animate-pulse"></span>
+                    Loading...
+                </span>
+            </div>
+        );
+    }
 
     return (
         <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
