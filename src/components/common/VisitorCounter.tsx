@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { logVisit, getDashboardStats } from '../../services/stats';
+import { logVisit, getTotalViews } from '../../services/stats';
 
 export function VisitorCounter() {
     const [views, setViews] = useState<number>(0);
@@ -16,13 +16,9 @@ export function VisitorCounter() {
                     sessionStorage.setItem('visit_counted', 'true');
                 }
 
-                // Fetch total views
-                const stats = await getDashboardStats(1);
-                if (stats && stats.totalViews !== undefined) {
-                    setViews(stats.totalViews);
-                } else {
-                    console.warn('Failed to load visitor stats');
-                }
+                // Fetch total views using lightweight function
+                const totalViews = await getTotalViews();
+                setViews(totalViews);
             } catch (error) {
                 console.error('VisitorCounter error:', error);
                 // Keep views at 0 on error

@@ -102,3 +102,22 @@ export async function logVisit(path: string) {
         console.error('Error logging visit:', error);
     }
 }
+
+// Lightweight function for footer - just get total count
+export async function getTotalViews(): Promise<number> {
+    try {
+        const { count, error } = await supabase
+            .from('page_views')
+            .select('*', { count: 'exact', head: true });
+
+        if (error) {
+            console.error('Error getting total views:', error);
+            return 0;
+        }
+
+        return count || 0;
+    } catch (error) {
+        console.error('Error in getTotalViews:', error);
+        return 0;
+    }
+}
