@@ -138,12 +138,12 @@ export function AdminVideos() {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex gap-2 bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-xl w-fit border border-slate-200 dark:border-slate-800">
+            <div className="flex flex-wrap gap-2 bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-xl w-full sm:w-fit border border-slate-200 dark:border-slate-800">
                 {(['all', 'videos', 'shorts'] as const).map((f) => (
                     <button
                         key={f}
                         onClick={() => setFilter(f === 'videos' ? 'long' : f as any)}
-                        className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${(filter === 'long' && f === 'videos') || filter === f
+                        className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-medium transition-all ${(filter === 'long' && f === 'videos') || filter === f
                             ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
                             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                             }`}
@@ -214,72 +214,74 @@ export function AdminVideos() {
                 </div>
             )}
 
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-sm font-semibold">
-                            <th className="px-6 py-4 text-center w-12">#</th>
-                            <th className="px-6 py-4">Title / ID</th>
-                            <th className="px-6 py-4">Views</th>
-                            <th className="px-6 py-4">Published</th>
-                            <th className="px-6 py-4">Article</th>
-                            <th className="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {loading ? (
-                            <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-500">Loading...</td></tr>
-                        ) : filteredVideos.length === 0 ? (
-                            <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-500">No videos found</td></tr>
-                        ) : (
-                            filteredVideos.map((video, index) => (
-                                <tr key={video.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                    <td className="px-6 py-4 text-center text-slate-400 font-mono text-xs">
-                                        {index + 1}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="font-medium text-slate-900 dark:text-white line-clamp-1 flex items-center gap-2">
-                                            {video.is_shorts && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">Shorts</span>}
-                                            {video.title}
-                                        </div>
-                                        <div className="text-[10px] text-blue-500 font-mono tracking-wider">{video.youtube_video_id || video.video_id}</div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm font-bold text-red-600">
-                                        {video.view_count?.toLocaleString() || '0'}
-                                    </td>
-                                    <td className="px-6 py-4 text-xs text-slate-500">
-                                        {video.published_at ? new Date(video.published_at).toLocaleDateString() : '-'}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-slate-500">
-                                        {video.related_article_slug || '-'}
-                                    </td>
-                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setEditingId(video.id);
-                                                setFormData({
-                                                    title: video.title,
-                                                    youtube_url: `https://www.youtube.com/watch?v=${video.video_id}`,
-                                                    related_article_slug: video.related_article_slug || ''
-                                                });
-                                                setIsAdding(false);
-                                            }}
-                                            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors"
-                                        >
-                                            ✏️
-                                        </button>
-                                        <button
-                                            onClick={() => deleteVideo(video.id)}
-                                            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
-                                        >
-                                            🗑️
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[800px]">
+                        <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-sm font-semibold">
+                                <th className="px-6 py-4 text-center w-12">#</th>
+                                <th className="px-6 py-4">Title / ID</th>
+                                <th className="px-6 py-4">Views</th>
+                                <th className="px-6 py-4">Published</th>
+                                <th className="px-6 py-4">Article</th>
+                                <th className="px-6 py-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {loading ? (
+                                <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-500">Loading...</td></tr>
+                            ) : filteredVideos.length === 0 ? (
+                                <tr><td colSpan={6} className="px-6 py-10 text-center text-slate-500">No videos found</td></tr>
+                            ) : (
+                                filteredVideos.map((video, index) => (
+                                    <tr key={video.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                        <td className="px-6 py-4 text-center text-slate-400 font-mono text-xs">
+                                            {index + 1}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="font-medium text-slate-900 dark:text-white line-clamp-1 flex items-center gap-2">
+                                                {video.is_shorts && <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">Shorts</span>}
+                                                {video.title}
+                                            </div>
+                                            <div className="text-[10px] text-blue-500 font-mono tracking-wider">{video.youtube_video_id || video.video_id}</div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm font-bold text-red-600">
+                                            {video.view_count?.toLocaleString() || '0'}
+                                        </td>
+                                        <td className="px-6 py-4 text-xs text-slate-500">
+                                            {video.published_at ? new Date(video.published_at).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-slate-500">
+                                            {video.related_article_slug || '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingId(video.id);
+                                                    setFormData({
+                                                        title: video.title,
+                                                        youtube_url: `https://www.youtube.com/watch?v=${video.video_id}`,
+                                                        related_article_slug: video.related_article_slug || ''
+                                                    });
+                                                    setIsAdding(false);
+                                                }}
+                                                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors"
+                                            >
+                                                ✏️
+                                            </button>
+                                            <button
+                                                onClick={() => deleteVideo(video.id)}
+                                                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

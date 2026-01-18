@@ -82,33 +82,33 @@ export function AdminProfile() {
 
                 <div className="space-y-6">
                     {currentCvUrl && (
-                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 w-full sm:w-auto">
                                 <span className="text-2xl">📑</span>
                                 <div>
                                     <div className="font-semibold text-slate-900 dark:text-white">Current CV</div>
                                     <div className="text-xs text-slate-500">Available for download</div>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 w-full sm:w-auto">
                                 <a
                                     href={currentCvUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="px-4 py-2 bg-white dark:bg-slate-800 text-blue-600 rounded-lg text-sm font-bold shadow-sm hover:shadow-md transition-all"
+                                    className="flex-1 sm:flex-none text-center px-4 py-2 bg-white dark:bg-slate-800 text-blue-600 rounded-lg text-sm font-bold shadow-sm hover:shadow-md transition-all"
                                 >
-                                    View / Download
+                                    View
                                 </a>
                                 <button
                                     type="button"
                                     onClick={handleDelete}
                                     disabled={uploading}
-                                    className={`px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${deleteConfirm
-                                            ? 'bg-red-600 text-white hover:bg-red-700 shadow-md animate-pulse'
-                                            : 'bg-white dark:bg-slate-800 text-red-600 hover:shadow-md hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-100 dark:hover:border-red-900'
+                                    className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${deleteConfirm
+                                        ? 'bg-red-600 text-white hover:bg-red-700 shadow-md animate-pulse'
+                                        : 'bg-white dark:bg-slate-800 text-red-600 hover:shadow-md hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-100 dark:hover:border-red-900'
                                         }`}
                                 >
-                                    {uploading ? 'Deleting...' : (deleteConfirm ? 'Confirm Delete?' : 'Delete')}
+                                    {uploading ? '...' : (deleteConfirm ? 'Confirm' : 'Delete')}
                                 </button>
                             </div>
                         </div>

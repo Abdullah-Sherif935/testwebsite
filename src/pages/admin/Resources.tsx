@@ -161,7 +161,7 @@ export function AdminResources() {
                     <thead>
                         <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-sm font-semibold">
                             <th className="px-6 py-4">Title / Type</th>
-                            <th className="px-6 py-4">Article Reference</th>
+                            <th className="px-6 py-4 hidden sm:table-cell">Article Reference</th>
                             <th className="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -174,39 +174,48 @@ export function AdminResources() {
                             resources.map((resource) => (
                                 <tr key={resource.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                                        <div className="font-medium text-slate-900 dark:text-white flex items-center gap-2 text-sm sm:text-base">
                                             <span>
                                                 {resource.type === 'pdf' ? '📄' : resource.type === 'code' ? '💻' : '🔗'}
                                             </span>
-                                            {resource.title}
+                                            <span className="line-clamp-1">{resource.title}</span>
                                         </div>
-                                        <div className="text-xs text-slate-500 truncate max-w-xs">{resource.url}</div>
+                                        <div className="flex flex-col gap-1 mt-1">
+                                            <div className="text-[10px] text-slate-500 truncate max-w-[150px] sm:max-w-xs">{resource.url}</div>
+                                            <div className="sm:hidden text-[10px] text-blue-500 font-mono">
+                                                Ref: {resource.related_article_slug || 'None'}
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-slate-500 font-mono">
+                                    <td className="px-6 py-4 text-sm text-slate-500 font-mono hidden sm:table-cell">
                                         {resource.related_article_slug || '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setEditingId(resource.id);
-                                                setFormData({
-                                                    title: resource.title,
-                                                    url: resource.url,
-                                                    type: resource.type as any,
-                                                    related_article_slug: resource.related_article_slug || ''
-                                                });
-                                                setIsAdding(false);
-                                            }}
-                                            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors"
-                                        >
-                                            ✏️
-                                        </button>
-                                        <button
-                                            onClick={() => deleteResource(resource.id)}
-                                            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
-                                        >
-                                            🗑️
-                                        </button>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingId(resource.id);
+                                                    setFormData({
+                                                        title: resource.title,
+                                                        url: resource.url,
+                                                        type: resource.type as any,
+                                                        related_article_slug: resource.related_article_slug || ''
+                                                    });
+                                                    setIsAdding(false);
+                                                }}
+                                                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors"
+                                                title="Edit"
+                                            >
+                                                ✏️
+                                            </button>
+                                            <button
+                                                onClick={() => deleteResource(resource.id)}
+                                                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
+                                                title="Delete"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))

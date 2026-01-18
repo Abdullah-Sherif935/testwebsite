@@ -210,32 +210,32 @@ export function Dashboard() {
                 <div className="p-8 border-b border-slate-100 dark:border-slate-800">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Most Visited Pages</h3>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                <div className="w-full">
+                    <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-400 uppercase tracking-wider">
                             <tr>
-                                <th className="px-8 py-4 font-semibold">Page Path</th>
-                                <th className="px-8 py-4 font-semibold text-right">Views</th>
-                                <th className="px-8 py-4 font-semibold text-right">% of Total</th>
+                                <th className="px-6 py-4 font-semibold">Path</th>
+                                <th className="px-6 py-4 font-semibold text-right">Views</th>
+                                <th className="px-6 py-4 font-semibold text-right sm:table-cell">Share</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {stats.topPages.map((page, idx) => (
                                 <tr key={page.path} className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                    <td className="px-8 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className="shrink-0 w-5 h-5 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">
                                                 {idx + 1}
                                             </span>
-                                            <span className="font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors">
+                                            <span className="font-medium text-slate-700 dark:text-slate-300 break-all text-xs sm:text-sm">
                                                 {page.path}
                                             </span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-4 text-right font-medium text-slate-900 dark:text-white">
+                                    <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
                                         {page.count.toLocaleString()}
                                     </td>
-                                    <td className="px-8 py-4 text-right text-slate-500">
+                                    <td className="px-6 py-4 text-right text-slate-500 text-[10px] sm:text-xs">
                                         {Math.round((page.count / Math.max(stats.totalViews, 1)) * 100)}%
                                     </td>
                                 </tr>
@@ -250,33 +250,46 @@ export function Dashboard() {
                 <div className="p-8 border-b border-slate-100 dark:border-slate-800">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Activity</h3>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                <div className="w-full">
+                    <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs text-slate-400 uppercase tracking-wider">
                             <tr>
-                                <th className="px-8 py-4 font-semibold">Time</th>
-                                <th className="px-8 py-4 font-semibold">Page</th>
-                                <th className="px-8 py-4 font-semibold">Device Info</th>
+                                <th className="px-6 py-4 font-semibold">Info</th>
+                                <th className="px-6 py-4 font-semibold text-right">Device Details</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {stats.recentLogs.map((log) => (
                                 <tr key={log.id} className="text-sm hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                    <td className="px-8 py-4 font-medium text-slate-700 dark:text-slate-300">
-                                        {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        <span className="block text-xs text-slate-400 font-normal">
-                                            {new Date(log.created_at).toLocaleDateString()}
-                                        </span>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded uppercase">
+                                                    {log.path}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400">
+                                                    {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <div className="text-[9px] text-slate-400">
+                                                {new Date(log.created_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td className="px-8 py-4">
-                                        <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-xs font-bold">
-                                            {log.path}
-                                        </span>
-                                    </td>
-                                    <td className="px-8 py-4 text-slate-500 max-w-xs truncate" title={log.user_agent || ''}>
-                                        <div className="flex items-center gap-2">
-                                            {log.user_agent?.includes('Mobile') ? '📱' : '💻'}
-                                            <span className="truncate">{log.user_agent}</span>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex flex-col items-end gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-base">{log.user_agent?.includes('Mobile') ? '📱' : '💻'}</span>
+                                                <span className="text-[10px] text-slate-500 dark:text-slate-400 italic">
+                                                    {log.user_agent?.includes('Windows') ? 'Windows' :
+                                                        log.user_agent?.includes('Android') ? 'Android' :
+                                                            log.user_agent?.includes('iPhone') ? 'iPhone' :
+                                                                log.user_agent?.includes('Macintosh') ? 'Mac' : 'Other'}
+                                                </span>
+                                            </div>
+                                            <div className="text-[9px] text-slate-400 max-w-[120px] sm:max-w-[250px] break-words line-clamp-2" title={log.user_agent || ''}>
+                                                {log.user_agent}
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
