@@ -65,12 +65,69 @@ export function Header() {
         <header className="fixed top-0 w-full z-50 transition-all duration-300 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
 
-                {/* LEFT: Logo + YouTube */}
+                {/* LEFT CONTAINER (Visually RIGHT in RTL) */}
+                {/* Order: Profile -> Logo -> YouTube -> Login */}
                 <div className="flex items-center gap-4 sm:gap-6">
+                    {/* 1. User Profile (First in DOM = Rightmost in RTL) */}
+                    {user && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className="flex items-center gap-2 p-0.5 rounded-full border-2 border-transparent hover:border-blue-600/30 transition-all"
+                            >
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-600/10 border border-blue-600/20 flex items-center justify-center">
+                                    {user.user_metadata?.avatar_url ? (
+                                        <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-sm">👤</span>
+                                    )}
+                                </div>
+                            </button>
+
+                            <AnimatePresence>
+                                {isProfileOpen && (
+                                    <>
+                                        {/* Backdrop to close menu */}
+                                        <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsProfileOpen(false)} />
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                            className={`absolute top-full mt-2 ${isArabic ? 'right-0' : 'left-0'} w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 z-50 overflow-hidden`}
+                                        >
+                                            <Link
+                                                to="/profile"
+                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                                onClick={() => setIsProfileOpen(false)}
+                                            >
+                                                <span>👤</span>
+                                                {isArabic ? 'الملف الشخصي' : 'Profile'}
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleSignOut();
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-t border-slate-100 dark:border-slate-800"
+                                            >
+                                                <span>🚪</span>
+                                                {isArabic ? 'تسجيل الخروج' : 'Sign Out'}
+                                            </button>
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
+
+                    {/* 2. Logo */}
                     <Link to="/" className="text-xl font-bold text-slate-900 dark:text-white shrink-0">
                         {t('app.title')}
                     </Link>
 
+                    {/* 3. YouTube */}
                     <a
                         href="https://youtube.com/@engabdullah-sherif"
                         target="_blank"
@@ -82,9 +139,19 @@ export function Header() {
                         </svg>
                         <span className="hidden lg:inline">{t('nav.youtube')}</span>
                     </a>
+
+                    {/* 4. Login Button (Last in DOM = Leftmost in RTL) */}
+                    {!user && (
+                        <Link
+                            to="/auth"
+                            className="hidden sm:flex px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                        >
+                            {isArabic ? 'دخول' : 'Login'}
+                        </Link>
+                    )}
                 </div>
 
-                {/* CENTER: Desktop Nav */}
+                {/* CENTER CONTAINER: Nav Links */}
                 <nav className="hidden md:flex items-center gap-6 lg:gap-8">
                     {navItems.map((item) => {
                         const active = isActive(item.to);
@@ -111,7 +178,7 @@ export function Header() {
                     })}
                 </nav>
 
-                {/* RIGHT: User & Actions */}
+                {/* RIGHT CONTAINER (Visually LEFT in RTL) */}
                 <div className="flex items-center gap-2 sm:gap-3">
                     <motion.button
                         onClick={toggleTheme}
@@ -142,63 +209,6 @@ export function Header() {
                         {i18n.language === 'en' ? 'AR' : 'EN'}
                     </motion.button>
 
-                    {/* Profile */}
-                    {user ? (
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center gap-2 p-0.5 rounded-full border-2 border-transparent hover:border-blue-600/30 transition-all"
-                            >
-                                <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-600/10 border border-blue-600/20 flex items-center justify-center">
-                                    {user.user_metadata?.avatar_url ? (
-                                        <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-sm">👤</span>
-                                    )}
-                                </div>
-                            </button>
-
-                            <AnimatePresence>
-                                {isProfileOpen && (
-                                    <>
-                                        {/* Backdrop to close menu */}
-                                        <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsProfileOpen(false)} />
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            className={`absolute top-full mt-2 ${isArabic ? 'left-0' : 'right-0'} w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 z-50 overflow-hidden`}
-                                        >
-                                            <Link
-                                                to="/profile"
-                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                                onClick={() => setIsProfileOpen(false)}
-                                            >
-                                                <span>👤</span>
-                                                {isArabic ? 'الملف الشخصي' : 'Profile'}
-                                            </Link>
-                                            <button
-                                                onClick={handleSignOut}
-                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors border-t border-slate-100 dark:border-slate-800"
-                                            >
-                                                <span>🚪</span>
-                                                {isArabic ? 'تسجيل الخروج' : 'Sign Out'}
-                                            </button>
-                                        </motion.div>
-                                    </>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    ) : (
-                        <Link
-                            to="/auth"
-                            className="hidden sm:flex px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
-                        >
-                            {isArabic ? 'دخول' : 'Login'}
-                        </Link>
-                    )}
-
-                    {/* Mobile Menu Toggle */}
                     <motion.button
                         className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
                         onClick={toggleMenu}
@@ -259,7 +269,6 @@ export function Header() {
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                console.log('Mobile: Sign Out triggered');
                                                 handleSignOut();
                                             }}
                                             className="w-full px-4 py-3.5 rounded-xl text-red-600 font-bold flex items-center gap-3 text-start hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
