@@ -12,7 +12,7 @@ interface AdminAuthContextType {
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || '';
+const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || '').toLowerCase().trim();
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -26,8 +26,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             setSession(session);
             setUser(session?.user ?? null);
 
-            // Check if user is admin
-            const userIsAdmin = session?.user?.email === ADMIN_EMAIL;
+            // Check if user is admin (Case-insensitive & trimmed)
+            const userEmail = session?.user?.email?.toLowerCase().trim();
+            const userIsAdmin = userEmail === ADMIN_EMAIL && ADMIN_EMAIL !== '';
             setIsAdmin(userIsAdmin);
 
             setLoading(false);
@@ -38,8 +39,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             setSession(session);
             setUser(session?.user ?? null);
 
-            // Check if user is admin
-            const userIsAdmin = session?.user?.email === ADMIN_EMAIL;
+            // Check if user is admin (Case-insensitive & trimmed)
+            const userEmail = session?.user?.email?.toLowerCase().trim();
+            const userIsAdmin = userEmail === ADMIN_EMAIL && ADMIN_EMAIL !== '';
             setIsAdmin(userIsAdmin);
 
             setLoading(false);
