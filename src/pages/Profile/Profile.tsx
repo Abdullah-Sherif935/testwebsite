@@ -44,9 +44,11 @@ export function Profile() {
     const handleSignOut = async () => {
         try {
             await signOut();
-            window.location.href = '/';
         } catch (err) {
             console.error(err);
+        } finally {
+            localStorage.clear();
+            sessionStorage.clear();
             window.location.href = '/';
         }
     };

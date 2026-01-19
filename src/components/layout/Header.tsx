@@ -41,22 +41,22 @@ export function Header() {
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
     const handleSignOut = async () => {
+        // Close menus immediately
+        setIsProfileOpen(false);
+        setIsMenuOpen(false);
+
         try {
-            // Close menus first
-            setIsProfileOpen(false);
-            setIsMenuOpen(false);
-
-            // Execute sign out
+            // Attempt standard Supabase Sign Out
             await signOut();
-
-            // Force a hard reload to clear all state and cookies effectively on Vercel
-            // Small delay to ensure signOut completes fully on mobile
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 100);
         } catch (err) {
             console.error('Sign out error:', err);
-            // Even if it fails, try to redirect
+        } finally {
+            // NUCLEAR OPTION: Manually force clear all storage
+            // This ensures potential stuck tokens are removed regardless of API success
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Force hard reload
             window.location.href = '/';
         }
     };
