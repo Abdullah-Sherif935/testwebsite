@@ -43,13 +43,11 @@ export function Profile() {
 
     const handleSignOut = async () => {
         try {
-            console.log('Profile: Starting sign out...');
             await signOut();
-            console.log('Profile: Sign out successful, navigating...');
-            navigate('/');
+            window.location.href = '/';
         } catch (err) {
-            console.error('Profile: Sign out error:', err);
-            alert(isArabic ? 'حدث خطأ أثناء تسجيل الخروج' : 'Error during sign out');
+            console.error(err);
+            window.location.href = '/';
         }
     };
 
