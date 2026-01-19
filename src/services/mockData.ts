@@ -55,7 +55,8 @@ export const MOCK_ARTICLES: Article[] = [
         status: 'published',
         language: 'ar',
         created_at: new Date().toISOString(),
-        image_url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=1000'
+        image_url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=1000',
+        views_count: 0
     },
     {
         id: '2',
@@ -69,7 +70,8 @@ export const MOCK_ARTICLES: Article[] = [
         status: 'published',
         language: 'ar',
         created_at: new Date().toISOString(),
-        image_url: 'https://images.unsplash.com/photo-1555421689-d68471e189f2?auto=format&fit=crop&q=80&w=1000'
+        image_url: 'https://images.unsplash.com/photo-1555421689-d68471e189f2?auto=format&fit=crop&q=80&w=1000',
+        views_count: 0
     },
     {
         id: '3',
@@ -83,7 +85,8 @@ export const MOCK_ARTICLES: Article[] = [
         status: 'published',
         language: 'ar',
         created_at: new Date().toISOString(),
-        image_url: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=1000'
+        image_url: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=1000',
+        views_count: 0
     }
 ];
 

@@ -9,7 +9,7 @@ import { pageTransition } from '../../utils/animations';
 import { Helmet } from 'react-helmet-async';
 
 export function SavedArticles() {
-    const { t, i18n } = useTranslation();
+    const { i18n } = useTranslation();
     const isArabic = i18n.language.startsWith('ar');
     const [articles, setArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState(true);
