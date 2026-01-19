@@ -9,13 +9,12 @@ import type { Video } from '../types/video';
 
 export function Videos() {
     const { t, i18n } = useTranslation();
+    const isArabic = i18n.language.startsWith('ar');
     const [videos, setVideos] = useState<Video[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState<'all' | 'shorts' | 'long'>('all');
     const [categoryFilter, setCategoryFilter] = useState<string>('all');
-
-    const isArabic = i18n.language === 'ar';
 
     const CATEGORIES = [
         'Inspection Robot',

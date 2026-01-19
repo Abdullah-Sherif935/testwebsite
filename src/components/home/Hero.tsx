@@ -6,7 +6,7 @@ import { fadeInUp, staggerContainer, scaleIn, buttonHover, buttonTap } from '../
 
 export function Hero() {
     const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language.startsWith('ar');
 
     // Helper to split subtitle safely
     const subtitleParts = t('hero.subtitle').split(' · ');

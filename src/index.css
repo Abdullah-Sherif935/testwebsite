@@ -44,6 +44,12 @@
 
 html {
   scroll-behavior: smooth;
+  /* Default to RTL to prevent flicker on first load since it's an Arabic site */
+  direction: rtl;
+}
+
+html[lang^="en"] {
+  direction: ltr;
 }
 
 body {
@@ -148,4 +154,22 @@ body {
 
 .watch-btn {
   @apply px-4 py-2 bg-blue-600/10 hover:bg-blue-600 text-blue-600 hover:text-white rounded-xl text-sm font-bold transition-all duration-300 border border-blue-600/20 hover:border-blue-600;
+}
+
+/* Utilities for Horizontal Slider */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.mask-fade-edges {
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+[dir="rtl"] .mask-fade-edges {
+  mask-image: linear-gradient(to left, transparent, black 5%, black 95%, transparent);
 }

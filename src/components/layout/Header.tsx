@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { buttonHover, buttonTap } from '../../utils/animations';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 export function Header() {
     const { t, i18n } = useTranslation();
     const { theme, setTheme } = useTheme();
+    const { user, signOut } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
+    const isArabic = i18n.language.startsWith('ar');
 
     const isActive = (path: string) => {
         if (path === '/') return location.pathname === '/';
@@ -33,6 +37,7 @@ export function Header() {
     ];
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -40,9 +45,55 @@ export function Header() {
         <header className="fixed top-0 w-full z-50 transition-all duration-300 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
 
-                {/* LEFT AREA: YouTube + Logo */}
+                {/* LEFT AREA: YouTube + Logo + Auth */}
                 <div className="flex items-center gap-6">
-                    {/* YouTube Tab - Top Left */}
+                    {/* Profile Dropdown (Next to YouTube) */}
+                    {user ? (
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                            >
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-600/10 border border-blue-600/20 flex items-center justify-center">
+                                    {user.user_metadata?.avatar_url ? (
+                                        <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-sm">👤</span>
+                                    )}
+                                </div>
+                            </button>
+
+                            <AnimatePresence>
+                                {isProfileOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                        className={`absolute top-full mt-2 ${isArabic ? 'right-0' : 'left-0'} w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50`}
+                                    >
+                                        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 mb-2">
+                                            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                        </div>
+                                        <Link
+                                            to="/profile"
+                                            className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                            onClick={() => setIsProfileOpen(false)}
+                                        >
+                                            {isArabic ? 'الملف الشخصي' : 'Profile'}
+                                        </Link>
+                                        <button
+                                            onClick={() => { signOut(); setIsProfileOpen(false); navigate('/'); }}
+                                            className="w-full text-start px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
+                                        >
+                                            {isArabic ? 'خروج' : 'Sign Out'}
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    ) : null}
+
+                    {/* YouTube Tab */}
                     <a
                         href="https://youtube.com/@engabdullah-sherif"
                         target="_blank"
@@ -55,10 +106,20 @@ export function Header() {
                         <span className="hidden lg:inline">{t('nav.youtube')}</span>
                     </a>
 
-                    {/* Logo */}
-                    <Link to="/" className="text-xl font-bold text-slate-900 dark:text-white">
-                        {t('app.title')}
-                    </Link>
+                    {/* Logo Area + Login for Guests */}
+                    <div className="flex items-center gap-4">
+                        <Link to="/" className="text-xl font-bold text-slate-900 dark:text-white">
+                            {t('app.title')}
+                        </Link>
+                        {!user && (
+                            <Link
+                                to="/auth"
+                                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-all"
+                            >
+                                {isArabic ? 'تسجيل الدخول' : 'Login'}
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {/* CENTER: Desktop Navigation */}
@@ -99,6 +160,17 @@ export function Header() {
                     >
                         {theme === 'dark' ? '☀️' : '🌙'}
                     </motion.button>
+
+                    <Link to="/saved-articles">
+                        <motion.button
+                            className="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 relative"
+                            whileHover={buttonHover}
+                            whileTap={buttonTap}
+                            title={i18n.language === 'ar' ? 'المقالات المحفوظة' : 'Saved Articles'}
+                        >
+                            <span>🔖</span>
+                        </motion.button>
+                    </Link>
 
                     <motion.button
                         onClick={toggleLang}

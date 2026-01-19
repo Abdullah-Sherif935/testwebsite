@@ -11,7 +11,7 @@ interface VideoItemProps {
 
 export function VideoItem({ title, videoId, videoUrl, thumbnailUrl, viewCount, publishedAt }: VideoItemProps) {
     const { i18n } = useTranslation();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language.startsWith('ar');
     const finalThumbnail = thumbnailUrl || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
     // دالة لتحويل الأرقام الكبيرة لشكل احترافي (1500 -> 1.5K)

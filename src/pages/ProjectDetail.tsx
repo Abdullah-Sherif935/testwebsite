@@ -19,7 +19,7 @@ export function ProjectDetail() {
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
     const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language.startsWith('ar');
 
     const editor = useEditor({
         extensions: [

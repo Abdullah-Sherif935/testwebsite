@@ -15,8 +15,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
     const navItems = [
         { label: 'Analytics', path: '/admin/dashboard', icon: '📊' },
+        { label: 'Users', path: '/admin/users', icon: '👥' },
         { label: 'Messages', path: '/admin/messages', icon: '📩' },
         { label: 'Articles', path: '/admin/articles', icon: '📝' },
+        { label: 'Comments', path: '/admin/comments', icon: '💬' },
         { label: 'Projects', path: '/admin/projects', icon: '🚀' },
         { label: 'Videos', path: '/admin/videos', icon: '🎥' },
         { label: 'Resources', path: '/admin/resources', icon: '📁' },

@@ -61,7 +61,10 @@
         },
         "attachments": "Attachments & Technical Files",
         "backToArticles": "Back to Articles",
-        "backToAll": "Back to all articles"
+        "backToAll": "Back to all articles",
+        "saveForLater": "Save for Later",
+        "markAsRead": "Mark as Read",
+        "loginToComment": "Please login to join the discussion."
     },
     "notFound": {
         "title": "404",

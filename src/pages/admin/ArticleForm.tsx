@@ -263,14 +263,64 @@ export function AdminArticleForm() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Featured Image URL</label>
-                            <input
-                                type="url"
-                                value={formData.image_url}
-                                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                                placeholder="https://..."
-                            />
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Featured Image</label>
+                            <div className="space-y-4">
+                                {formData.image_url && (
+                                    <div className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                                        <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, image_url: '' })}
+                                            className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition-colors"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                )}
+                                <div className="flex items-center justify-center w-full">
+                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border-slate-200 dark:border-slate-700">
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <span className="text-2xl mb-2">🖼️</span>
+                                            <p className="mb-1 text-sm text-slate-500 dark:text-slate-400 font-bold">Click to upload cover</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest">PNG, JPG, WEBP (Max 2MB)</p>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    if (file.size > 2 * 1024 * 1024) {
+                                                        alert('Image too large. Max 2MB.');
+                                                        return;
+                                                    }
+                                                    setSaving(true);
+                                                    try {
+                                                        const fileExt = file.name.split('.').pop();
+                                                        const fileName = `${Date.now()}.${fileExt}`;
+                                                        const { error: uploadError } = await supabase.storage
+                                                            .from('article-covers')
+                                                            .upload(fileName, file);
+
+                                                        if (uploadError) throw uploadError;
+
+                                                        const { data: { publicUrl } } = supabase.storage
+                                                            .from('article-covers')
+                                                            .getPublicUrl(fileName);
+
+                                                        setFormData({ ...formData, image_url: publicUrl });
+                                                    } catch (err: any) {
+                                                        alert('Upload failed: ' + err.message);
+                                                    } finally {
+                                                        setSaving(false);
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         <button

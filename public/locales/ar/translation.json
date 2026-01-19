@@ -61,7 +61,10 @@
         },
         "attachments": "المرفقات والملفات التقنية",
         "backToArticles": "العودة للمقالات",
-        "backToAll": "العودة لجميع المقالات"
+        "backToAll": "العودة لجميع المقالات",
+        "saveForLater": "حفظ للقراءة لاحقاً",
+        "markAsRead": "تحديد كمقروء",
+        "loginToComment": "يرجى تسجيل الدخول للمشاركة في النقاش."
     },
     "notFound": {
         "title": "404",

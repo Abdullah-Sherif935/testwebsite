@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
-import { getAllArticles } from '../../services/articles';
+import { getAllArticles, getUserArticleInteractions } from '../../services/articles';
+import { supabase } from '../../services/supabase';
 import { pageTransition } from '../../utils/animations';
 import type { Article } from '../../types/article';
 
@@ -11,19 +12,37 @@ type SortOption = 'newest' | 'oldest';
 
 export function Articles() {
     const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language.startsWith('ar');
 
     const [articles, setArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [sortBy, setSortBy] = useState<SortOption>('newest');
     const [searchQuery, setSearchQuery] = useState('');
+    const [interactions, setInteractions] = useState<Record<string, { is_saved: boolean, is_read: boolean }>>({});
 
     useEffect(() => {
-        getAllArticles().then(data => {
-            setArticles(data);
+        const loadInitialData = async () => {
+            const articlesData = await getAllArticles();
+            setArticles(articlesData);
+
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const userActions = await getUserArticleInteractions(session.user.id);
+                const interactionMap: Record<string, { is_saved: boolean, is_read: boolean }> = {};
+                userActions.forEach((action: any) => {
+                    interactionMap[action.article_id] = {
+                        is_saved: action.is_saved,
+                        is_read: action.is_read
+                    };
+                });
+                setInteractions(interactionMap);
+            }
+
             setLoading(false);
-        });
+        };
+
+        loadInitialData();
     }, []);
 
     // Extract unique categories
@@ -121,30 +140,34 @@ export function Articles() {
                     </div>
 
                     {/* Category & Sort */}
-                    <div className="flex flex-wrap gap-3 items-center justify-between">
-                        <div className="flex flex-wrap gap-2">
-                            {categories.map((cat) => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setSelectedCategory(cat)}
-                                    className={`px-3 py-1.5 text-sm rounded-md transition-colors ${selectedCategory === cat
-                                        ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium'
-                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                        }`}
-                                >
-                                    {cat === 'all' ? t('cards.all') : cat}
-                                </button>
-                            ))}
+                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        {/* Category Dropdown Filter */}
+                        <div className="w-full md:w-auto">
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="w-full md:min-w-[200px] px-4 py-2 text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-800 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                            >
+                                <option value="all">{t('cards.all')}</option>
+                                {categories.filter(c => c !== 'all').map((cat) => (
+                                    <option key={cat} value={cat}>
+                                        {cat}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as SortOption)}
-                            className="px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md border-none outline-none cursor-pointer"
-                        >
-                            <option value="newest">{t('cards.newest')}</option>
-                            <option value="oldest">{t('cards.oldest')}</option>
-                        </select>
+                        {/* Sort Filter */}
+                        <div className="w-full md:w-auto">
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                                className="w-full md:min-w-[150px] px-4 py-2 text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-800 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                            >
+                                <option value="newest">{t('cards.newest')}</option>
+                                <option value="oldest">{t('cards.oldest')}</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Results count */}
@@ -170,52 +193,87 @@ export function Articles() {
                     </motion.div>
                 ) : (
                     <motion.div
-                        className="space-y-6"
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
                     >
                         {filteredArticles.map((article, index) => {
-                            // Defensive guard: Skip articles without valid slugs
-                            if (!article.slug) {
-                                console.warn('Skipping article without slug:', article.id, article.title);
-                                return null;
-                            }
+                            if (!article.slug) return null;
 
                             return (
                                 <motion.article
                                     key={article.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="group"
+                                    className="group h-full"
                                 >
                                     <Link
                                         to={`/articles/${article.slug}`}
-                                        className="block pb-6 border-b border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                                        className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 transition-all duration-300"
                                     >
-                                        <div className="flex items-start justify-between gap-4 mb-3">
-                                            <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
-                                                {article.title}
-                                            </h2>
-                                            <span className="flex-shrink-0 px-2.5 py-1 text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
-                                                {article.category}
-                                            </span>
+                                        {/* Image Container with 1:1 Aspect Ratio */}
+                                        <div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-800">
+                                            {article.image_url ? (
+                                                <img
+                                                    src={article.image_url}
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                    alt=""
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-4xl opacity-20">
+                                                    📝
+                                                </div>
+                                            )}
+
+                                            {/* Status Indicators Overlays */}
+                                            <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
+                                                {interactions[article.id]?.is_saved && (
+                                                    <div className="bg-blue-600 text-white p-2 rounded-full shadow-lg" title={isArabic ? 'محفوظ' : 'Saved'}>
+                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                {interactions[article.id]?.is_read && (
+                                                    <div className="bg-emerald-500 text-white p-2 rounded-full shadow-lg" title={isArabic ? 'تمت القراءة' : 'Read'}>
+                                                        <span className="text-[10px] font-bold">✅✅</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Category Overlay */}
+                                            <div className={`absolute top-4 ${isArabic ? 'left-4' : 'right-4'} z-10`}>
+                                                <span className="px-3 py-1 text-xs font-bold bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-full backdrop-blur-sm shadow-sm">
+                                                    {article.category}
+                                                </span>
+                                            </div>
                                         </div>
 
-                                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4 line-clamp-2">
-                                            {article.excerpt || (article.content_md || article.content)?.substring(0, 150) + '...'}
-                                        </p>
+                                        <div className="p-6 flex flex-col flex-grow">
+                                            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-tight">
+                                                {article.title}
+                                            </h2>
 
-                                        <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-500">
-                                            <time dateTime={article.created_at}>
-                                                {formatDate(article.created_at)}
-                                            </time>
-                                            <span>•</span>
-                                            <span>{estimateReadTime(article.content_md || article.content || '')}</span>
-                                            <span className={`text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity ${isArabic ? 'mr-auto' : 'ml-auto'}`}>
-                                                {t('cards.readMore')}
-                                            </span>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 flex-grow">
+                                                {article.excerpt || (article.content_md || article.content)?.substring(0, 100) + '...'}
+                                            </p>
+
+                                            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 text-[10px] sm:text-xs text-slate-500 font-medium">
+                                                <div className="flex items-center gap-2">
+                                                    <span>📅</span>
+                                                    <span>{formatDate(article.created_at)}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span>⏱️</span>
+                                                    <span>{estimateReadTime(article.content_md || article.content || '')}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span>👁️</span>
+                                                    <span>{article.views_count || 0}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </Link>
                                 </motion.article>

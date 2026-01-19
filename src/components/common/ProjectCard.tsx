@@ -16,7 +16,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ title, excerpt, coverImage, slug, technologies }: ProjectCardProps) {
     const { i18n } = useTranslation();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language.startsWith('ar');
 
     // Use placeholder if no cover image provided
     const displayImage = coverImage && coverImage.trim() !== '' ? coverImage : PLACEHOLDER_IMAGE;

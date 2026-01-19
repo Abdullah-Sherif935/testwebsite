@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useNavigate, useLocation, useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
+import { Helmet } from 'react-helmet-async';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -12,12 +12,14 @@ import rehypeKatex from 'rehype-katex';
 import rehypeSanitize from 'rehype-sanitize';
 
 // Services & Types
-import { getArticleBySlug } from '../../services/articles';
+import { getArticleBySlug, getArticleAction, toggleArticleAction, incrementArticleViews } from '../../services/articles';
 import { getResourcesByArticleSlug } from '../../services/resources';
-import type { Article } from '../../types/article';
+import { supabase } from '../../services/supabase';
+import type { Article, ArticleAction } from '../../types/article';
 import type { Resource } from '../../types/resource';
 import { pageTransition } from '../../utils/animations';
 import { RichTextRenderer } from '../../components/common/RichTextRenderer';
+import { CommentSection } from '../../components/articles/CommentSection';
 
 // CSS for Math and Code Highlighting
 import 'katex/dist/katex.min.css';
@@ -27,11 +29,24 @@ import { extractSEOData } from '../../utils/seo';
 
 export function ArticleDetail() {
     const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === 'ar';
+    const navigate = useNavigate();
+    const location = useLocation();
+    const isArabic = i18n.language.startsWith('ar');
     const { slug } = useParams<{ slug: string }>();
     const [article, setArticle] = useState<Article | null>(null);
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Interactions
+    const [user, setUser] = useState<any>(null);
+    const [actions, setActions] = useState<ArticleAction | null>(null);
+    const [actionLoading, setActionLoading] = useState(false);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null);
+        });
+    }, []);
 
     const markdownComponents = useMemo(() => ({
         h1: ({ node, ...props }: any) => <h1 className="text-4xl font-bold mt-12 mb-6 text-slate-900 dark:text-white" {...props} />,
@@ -81,9 +96,36 @@ export function ArticleDetail() {
                 setArticle(articleData);
                 setResources(resourcesData);
                 setLoading(false);
+                if (articleData?.id) {
+                    incrementArticleViews(articleData.id);
+                }
             });
         }
     }, [slug]);
+
+    useEffect(() => {
+        if (article && user) {
+            getArticleAction(article.id, user.id).then(setActions);
+        }
+    }, [article, user]);
+
+    const handleAction = async (type: 'is_saved' | 'is_read') => {
+        if (!user || !article) {
+            navigate('/auth', { state: { from: location } });
+            return;
+        }
+
+        setActionLoading(true);
+        const newValue = !actions?.[type];
+        const { error } = await toggleArticleAction(article.id, user.id, type, newValue);
+
+        if (error) {
+            alert(error.message);
+        } else {
+            setActions(prev => prev ? { ...prev, [type]: newValue } : { [type]: newValue } as any);
+        }
+        setActionLoading(false);
+    };
 
     const articleBody = useMemo(() => article?.content_md || article?.content, [article]);
     const seoData = useMemo(() => extractSEOData(article?.content_rich, article?.excerpt), [article]);
@@ -119,25 +161,6 @@ export function ArticleDetail() {
     const description = seoData.description || article?.excerpt || '';
     const ogImage = seoData.ogImage || article?.image_url;
 
-    if (!article) {
-        return (
-            <motion.div
-                className="min-h-screen pt-32 container mx-auto px-4 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-            >
-                <h1 className="text-3xl font-bold mb-6 text-slate-900 dark:text-white">{t('article.notFound.title')}</h1>
-                <p className="text-slate-600 dark:text-slate-400 mb-8">{t('article.notFound.description')}</p>
-                <Link
-                    to="/articles"
-                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    {t('article.backToArticles')}
-                </Link>
-            </motion.div>
-        );
-    }
-
     return (
         <motion.article
             className="pt-16 pb-20 min-h-screen bg-white dark:bg-slate-950"
@@ -163,21 +186,19 @@ export function ArticleDetail() {
                 <meta name="twitter:description" content={description} />
                 {ogImage && <meta name="twitter:image" content={ogImage} />}
 
-                {/* Direction: We use the site's language direction, but if article has specific lang we could respect it. 
-                    For now, assuming unified UI direction. */}
                 <html lang={i18n.language} dir={isArabic ? 'rtl' : 'ltr'} />
             </Helmet>
 
             <div className="container mx-auto px-4 max-w-4xl">
                 {/* Header */}
                 <motion.div
-                    className="relative mb-12 text-center"
+                    className="relative mb-8 text-center"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                 >
                     {/* Category Label */}
-                    <div className={`lg:absolute ${isArabic ? 'lg:-right-32' : 'lg:-left-32'} lg:top-0 mb-6 lg:mb-0`}>
+                    <div className="mb-6">
                         <div className="inline-block px-4 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-sm font-semibold whitespace-nowrap">
                             {article.category}
                         </div>
@@ -188,32 +209,53 @@ export function ArticleDetail() {
                             {article.title}
                         </h1>
                     </div>
-                    <div className="flex items-center justify-center gap-4 text-slate-500 dark:text-slate-400 text-sm">
-                        <time dateTime={article.created_at}>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-slate-500 dark:text-slate-400 text-sm">
+                        <time dateTime={article.created_at} className="flex items-center gap-2">
+                            <span>📅</span>
                             {new Date(article.created_at).toLocaleDateString(isArabic ? 'ar-EG' : 'en-US', {
                                 year: 'numeric',
                                 month: 'long',
                                 day: 'numeric'
                             })}
                         </time>
+
+                        {/* Interaction Buttons */}
+                        <div className="flex items-center gap-3">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleAction('is_saved')}
+                                disabled={actionLoading}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all shadow-sm font-bold ${actions?.is_saved
+                                    ? 'bg-blue-600 text-white shadow-blue-500/20'
+                                    : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                                    }`}
+                                title={t('article.saveForLater')}
+                            >
+                                <span className="text-lg">{actions?.is_saved ? '🔖' : '📑'}</span>
+                                {actions?.is_saved ? (isArabic ? 'محفوظ' : 'Saved') : (isArabic ? 'حفظ' : 'Save')}
+                            </motion.button>
+
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleAction('is_read')}
+                                disabled={actionLoading}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all shadow-sm font-bold ${actions?.is_read
+                                    ? 'bg-green-600 text-white shadow-green-500/20'
+                                    : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                                    }`}
+                                title={t('article.markAsRead')}
+                            >
+                                <span className="text-lg">{actions?.is_read ? '✅' : '✔️'}</span>
+                                {actions?.is_read ? (isArabic ? 'مقروء' : 'Read') : (isArabic ? 'مقروء؟' : 'Read?')}
+                            </motion.button>
+                        </div>
                     </div>
                 </motion.div>
 
-                {/* Featured Image */}
-                {article.image_url && (
-                    <motion.div
-                        className="relative aspect-video w-full rounded-2xl overflow-hidden mb-16 shadow-2xl"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <img
-                            src={article.image_url}
-                            alt={article.title}
-                            className="w-full h-full object-cover"
-                        />
-                    </motion.div>
-                )}
+                {/* Header */}
 
                 {/* Content */}
                 <motion.div
@@ -290,6 +332,9 @@ export function ArticleDetail() {
                         </div>
                     </motion.section>
                 )}
+
+                {/* Comments Section */}
+                <CommentSection articleId={article.id} />
 
                 {/* Back Button */}
                 <motion.div

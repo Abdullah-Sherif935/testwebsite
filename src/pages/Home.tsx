@@ -17,7 +17,7 @@ import type { Video } from '../types/video';
 
 export function Home() {
     const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language.startsWith('ar');
 
     // Start with empty arrays to ensure we see the REAL data from Supabase
     const [articles, setArticles] = useState<Article[]>([]);

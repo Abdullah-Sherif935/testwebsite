@@ -9,7 +9,7 @@ import { staggerContainer, fadeInUp } from '../utils/animations';
 
 export function Projects() {
     const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === 'ar';
+    const isArabic = i18n.language.startsWith('ar');
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
 

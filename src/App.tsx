@@ -11,13 +11,15 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { Home } from './pages/Home';
 import { Articles } from './pages/Articles/index';
 import { ArticleDetail } from './pages/Articles/ArticleDetail';
+import { SavedArticles } from './pages/Articles/SavedArticles';
 import { Resources } from './pages/Resources';
 import { About } from './pages/About';
 import { Videos } from './pages/Videos';
 import { NotFound } from './pages/NotFound';
+import { Auth } from './pages/Auth/Auth';
+import { Profile } from './pages/Profile/Profile';
 
 // Admin Pages
-import { Login } from './pages/admin/Login';
 import { AdminArticles } from './pages/admin/Articles';
 import { AdminArticleForm } from './pages/admin/ArticleForm';
 import { AdminVideos } from './pages/admin/Videos';
@@ -27,6 +29,8 @@ import { AdminProjectForm } from './pages/admin/ProjectForm';
 import { AdminProfile } from './pages/admin/Profile';
 import { Dashboard } from './pages/admin/Dashboard';
 import { AdminMessages } from './pages/admin/Messages';
+import { AdminComments } from './pages/admin/Comments';
+import { AdminUsers } from './pages/admin/Users';
 import { Projects } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
 
@@ -40,37 +44,47 @@ function App() {
   const isAdminPath = location.pathname.startsWith('/admin');
 
   useEffect(() => {
-    document.documentElement.dir = i18n.dir();
+    const isAr = i18n.language.startsWith('ar');
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
     document.documentElement.lang = i18n.language;
-  }, [i18n, i18n.language]);
+  }, [i18n.language]);
+
+  const isAr = i18n.language.startsWith('ar');
 
   const publicRoutes = (
-    <Layout>
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Home />} />
-          <Route path="/articles" element={<Articles />} />
-          <Route path="/articles/:slug" element={<ArticleDetail />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/projects/:slug" element={<ProjectDetail />} />
-          <Route path="/resources" element={<Resources />} />
-          <Route path="/videos" element={<Videos />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AnimatePresence>
-    </Layout>
+    <div dir={isAr ? 'rtl' : 'ltr'} lang={i18n.language}>
+      <Layout>
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<Home />} />
+            <Route path="/articles" element={<Articles />} />
+            <Route path="/articles/:slug" element={<ArticleDetail />} />
+            <Route path="/saved-articles" element={<SavedArticles />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:slug" element={<ProjectDetail />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/videos" element={<Videos />} />
+            <Route path="/about" element={<About />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AnimatePresence>
+      </Layout>
+    </div>
   );
 
   const adminRoutes = (
     <Routes>
-      <Route path="/admin/login" element={<Login />} />
+      <Route path="/admin/login" element={<Auth />} />
       <Route
         path="/admin/*"
         element={
           <ProtectedRoute>
             <AdminLayout>
               <Routes>
+                <Route path="/" element={<Dashboard />} /> {/* Default admin route */}
+                <Route path="users" element={<AdminUsers />} />
                 <Route path="articles" element={<AdminArticles />} />
                 <Route path="articles/new" element={<AdminArticleForm />} />
                 <Route path="articles/edit/:id" element={<AdminArticleForm />} />
@@ -82,6 +96,7 @@ function App() {
                 <Route path="profile" element={<AdminProfile />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="messages" element={<AdminMessages />} />
+                <Route path="comments" element={<AdminComments />} />
                 {/* Default redirect to articles */}
                 <Route path="*" element={<AdminArticles />} />
               </Routes>
