@@ -50,7 +50,10 @@ export function Header() {
             await signOut();
 
             // Force a hard reload to clear all state and cookies effectively on Vercel
-            window.location.href = '/';
+            // Small delay to ensure signOut completes fully on mobile
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 100);
         } catch (err) {
             console.error('Sign out error:', err);
             // Even if it fails, try to redirect
@@ -252,8 +255,14 @@ export function Header() {
                                             <span>👤</span> {isArabic ? 'الملف الشخصي' : 'Profile'}
                                         </Link>
                                         <button
-                                            onClick={handleSignOut}
-                                            className="px-4 py-3.5 rounded-xl text-red-600 font-bold flex items-center gap-3"
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                console.log('Mobile: Sign Out triggered');
+                                                handleSignOut();
+                                            }}
+                                            className="w-full px-4 py-3.5 rounded-xl text-red-600 font-bold flex items-center gap-3 text-start hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                                         >
                                             <span>🚪</span> {isArabic ? 'تسجيل الخروج' : 'Sign Out'}
                                         </button>
