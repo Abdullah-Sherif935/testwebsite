@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { adminSupabase } from './adminSupabase'
 import type { Article } from '../types/article'
 import { MOCK_ARTICLES } from './mockData';
 import { filterProfanity } from '../utils/filter';
@@ -197,14 +198,28 @@ export async function deleteComment(commentId: string, userId: string) {
         .eq('user_id', userId);
 }
 
+export async function updateComment(commentId: string, userId: string, content: string) {
+    const { cleanText, isFlagged } = filterProfanity(content);
+
+    if (isFlagged) {
+        throw new Error('Comment contains inappropriate content and cannot be updated.');
+    }
+
+    return supabase
+        .from('article_comments')
+        .update({ content: cleanText })
+        .eq('id', commentId)
+        .eq('user_id', userId);
+}
+
 // Admin Comment Management
 export async function adminGetAllComments() {
-    const { data, error } = await supabase
+    const { data, error } = await adminSupabase
         .from('article_comments')
         .select(`
             *,
-            articles:article_id (title),
-            profiles:user_id (full_name, avatar_url)
+            articles:article_id (id, title, slug),
+            profiles:user_id (full_name, avatar_url, email)
         `)
         .order('created_at', { ascending: false });
 
@@ -215,8 +230,15 @@ export async function adminGetAllComments() {
     return data;
 }
 
+export async function markCommentAsRead(commentId: string) {
+    return await adminSupabase
+        .from('article_comments')
+        .update({ is_read: true })
+        .eq('id', commentId);
+}
+
 export async function adminDeleteComment(commentId: string) {
-    return supabase
+    return await adminSupabase
         .from('article_comments')
         .delete()
         .eq('id', commentId);

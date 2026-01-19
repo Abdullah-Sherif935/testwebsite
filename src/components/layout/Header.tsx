@@ -67,7 +67,7 @@ export function Header() {
 
                 {/* LEFT CONTAINER (Visually RIGHT in RTL) */}
                 {/* Order: Profile -> Logo -> YouTube -> Login */}
-                <div className="flex items-center gap-4 sm:gap-6">
+                <div className="flex items-center gap-1.5 sm:gap-6">
                     {/* 1. User Profile (First in DOM = Rightmost in RTL) */}
                     {user && (
                         <div className="relative">
@@ -123,7 +123,7 @@ export function Header() {
                     )}
 
                     {/* 2. Logo */}
-                    <Link to="/" className="text-xl font-bold text-slate-900 dark:text-white shrink-0">
+                    <Link to="/" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white shrink-0">
                         {t('app.title')}
                     </Link>
 
@@ -144,7 +144,7 @@ export function Header() {
                     {!user && (
                         <Link
                             to="/auth"
-                            className="flex px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                            className="flex px-2.5 py-1 sm:px-4 sm:py-1.5 bg-blue-600 text-white text-[10px] sm:text-xs font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 shrink-0"
                         >
                             {isArabic ? 'دخول' : 'Login'}
                         </Link>
@@ -179,10 +179,10 @@ export function Header() {
                 </nav>
 
                 {/* RIGHT: User & Actions */}
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1 sm:gap-3">
                     <motion.button
                         onClick={toggleTheme}
-                        className="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        className="p-1.5 sm:p-2 rounded-full text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                         whileHover={buttonHover}
                         whileTap={buttonTap}
                     >
@@ -191,7 +191,7 @@ export function Header() {
 
                     <Link to="/saved-articles">
                         <motion.button
-                            className="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 relative"
+                            className="p-1.5 sm:p-2 rounded-full text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 relative"
                             whileHover={buttonHover}
                             whileTap={buttonTap}
                             title={isArabic ? 'المقالات المحفوظة' : 'Saved Articles'}
@@ -202,7 +202,7 @@ export function Header() {
 
                     <motion.button
                         onClick={toggleLang}
-                        className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-500 uppercase"
+                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-bold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-500 uppercase shrink-0"
                         whileHover={buttonHover}
                         whileTap={buttonTap}
                     >
@@ -210,12 +210,12 @@ export function Header() {
                     </motion.button>
 
                     <motion.button
-                        className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                        className="md:hidden p-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
                         onClick={toggleMenu}
                         whileHover={buttonHover}
                         whileTap={buttonTap}
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             {isMenuOpen ? (
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             ) : (

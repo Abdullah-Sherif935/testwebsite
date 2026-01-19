@@ -45,7 +45,7 @@ export function Footer() {
     ];
 
     return (
-        <footer className="py-12 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 transition-colors">
+        <footer id="contact" className="py-12 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 transition-colors">
             <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex flex-col md:flex-row items-center gap-4 text-slate-600 dark:text-slate-400 text-sm">
                     <span>{t('footer.copyright', { year: new Date().getFullYear() })}</span>

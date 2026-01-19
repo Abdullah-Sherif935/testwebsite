@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
-import { getArticleComments, postComment, deleteComment } from '../../services/articles';
+import { getArticleComments, postComment, deleteComment, updateComment } from '../../services/articles';
 import { filterProfanity } from '../../utils/filter';
 import type { ArticleComment } from '../../types/article';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 interface CommentSectionProps {
     articleId: string;
@@ -39,11 +40,9 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     }, [articleId]);
 
     async function fetchComments() {
-        // Check if articleId is a valid UUID (Supabase uses UUIDs for real articles)
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(articleId);
 
         if (!isUuid) {
-            console.warn('Comments only work on real articles (stored in database). Mock articles do not support comments.');
             setLoading(false);
             return;
         }
@@ -58,7 +57,6 @@ export function CommentSection({ articleId }: CommentSectionProps) {
         e.preventDefault();
         if (!user || !newComment.trim()) return;
 
-        // Front-end safety check
         const { isFlagged } = filterProfanity(newComment);
         if (isFlagged && newComment.length < 5) {
             alert(isArabic ? 'التعليق قصير جداً أو يحتوي على محتوى غير لائق.' : 'Comment is too short or contains inappropriate content.');
@@ -92,12 +90,28 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     }
 
     async function handleDelete(commentId: string) {
-        if (!confirm('Are you sure you want to delete this comment?')) return;
+        if (!confirm(isArabic ? 'هل أنت متأكد من حذف التعليق؟' : 'Are you sure you want to delete this comment?')) return;
         const { error } = await deleteComment(commentId, user.id);
         if (error) {
             alert(error.message);
         } else {
             fetchComments();
+        }
+    }
+
+    async function handleUpdate(commentId: string, content: string) {
+        try {
+            const { error } = await updateComment(commentId, user.id, content);
+            if (error) {
+                alert(error.message);
+                return false;
+            } else {
+                fetchComments();
+                return true;
+            }
+        } catch (err: any) {
+            alert(isArabic ? 'حدث خطأ أثناء تعديل التعليق.' : 'Error updating comment.');
+            return false;
         }
     }
 
@@ -116,10 +130,10 @@ export function CommentSection({ articleId }: CommentSectionProps) {
             <div className="mt-16 p-8 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
                 <span className="text-3xl mb-3 block">💡</span>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                    Comments available on real articles
+                    {isArabic ? 'التعليقات متاحة للمقالات الحقيقية فقط' : 'Comments available on real articles'}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 text-sm">
-                    This is a placeholder article. Create a real article from the Admin Panel to enable user discussions and interactions.
+                    {isArabic ? 'هذه مقالة افتراضية. أنشئ مقالة حقيقية من لوحة التحكم لتفعيل التعليقات.' : 'This is a placeholder article. Create a real article from the Admin Panel to enable user discussions.'}
                 </p>
             </div>
         );
@@ -129,7 +143,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
         <section className="mt-16 space-y-8">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                    Comments ({comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)})
+                    {isArabic ? 'التعليقات' : 'Comments'} ({comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)})
                 </h2>
             </div>
 
@@ -138,7 +152,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                     <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Write a comment..."
+                        placeholder={isArabic ? 'اكتب تعليقاً...' : 'Write a comment...'}
                         className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px]"
                     />
                     <div className="flex justify-end">
@@ -148,21 +162,27 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                             type="submit"
                             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-lg shadow-blue-500/20"
                         >
-                            Post Comment
+                            {isArabic ? 'نشر التعليق' : 'Post Comment'}
                         </motion.button>
                     </div>
                 </form>
             ) : (
                 <div className="p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl text-center border border-dashed border-slate-200 dark:border-slate-800">
                     <p className="text-slate-600 dark:text-slate-400">
-                        Please <Link to="/admin/login" className="text-blue-600 font-bold hover:underline">login</Link> to join the discussion.
+                        {isArabic ? (
+                            <>يرجى <Link to="/admin/login" className="text-blue-600 font-bold hover:underline">تسجيل الدخول</Link> للمشاركة في النقاش.</>
+                        ) : (
+                            <>Please <Link to="/admin/login" className="text-blue-600 font-bold hover:underline">login</Link> to join the discussion.</>
+                        )}
                     </p>
                 </div>
             )}
 
             <div className="space-y-6">
                 {comments.length === 0 ? (
-                    <p className="text-center text-slate-500 py-10">No comments yet. Be the first to share your thoughts!</p>
+                    <p className="text-center text-slate-500 py-10">
+                        {isArabic ? 'لا توجد تعليقات بعد. كن أول من يشارك برأيه!' : 'No comments yet. Be the first to share your thoughts!'}
+                    </p>
                 ) : (
                     comments.map((comment) => (
                         <CommentCard
@@ -171,10 +191,12 @@ export function CommentSection({ articleId }: CommentSectionProps) {
                             user={user}
                             onReply={handleReply}
                             onDelete={handleDelete}
+                            onUpdate={handleUpdate}
                             replyingTo={replyingTo}
                             setReplyingTo={setReplyingTo}
                             replyContent={replyContent}
                             setReplyContent={setReplyContent}
+                            isArabic={isArabic}
                         />
                     ))
                 )}
@@ -188,12 +210,24 @@ function CommentCard({
     user,
     onReply,
     onDelete,
+    onUpdate,
     replyingTo,
     setReplyingTo,
     replyContent,
-    setReplyContent
+    setReplyContent,
+    isArabic
 }: any) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editContent, setEditContent] = useState(comment.content);
     const isOwner = user?.id === comment.user_id;
+
+    async function handleUpdateSubmit() {
+        if (!editContent.trim()) return;
+        const success = await onUpdate(comment.id, editContent);
+        if (success) {
+            setIsEditing(false);
+        }
+    }
 
     return (
         <motion.div
@@ -215,34 +249,72 @@ function CommentCard({
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="font-bold text-slate-900 dark:text-white mr-2">
-                                {comment.profiles?.full_name || 'Anonymous'}
+                                {comment.profiles?.full_name || (isArabic ? 'مستخدم مجهول' : 'Anonymous')}
                             </span>
                             <span className="text-xs text-slate-500">
                                 {new Date(comment.created_at).toLocaleDateString()}
                             </span>
                         </div>
                         {isOwner && (
-                            <button
-                                onClick={() => onDelete(comment.id)}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 transition-all"
-                            >
-                                🗑️
-                            </button>
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                <button
+                                    onClick={() => setIsEditing(!isEditing)}
+                                    className="p-1 text-slate-400 hover:text-blue-600"
+                                    title={isArabic ? 'تعديل' : 'Edit'}
+                                >
+                                    ✏️
+                                </button>
+                                <button
+                                    onClick={() => onDelete(comment.id)}
+                                    className="p-1 text-slate-400 hover:text-red-600"
+                                    title={isArabic ? 'حذف' : 'Delete'}
+                                >
+                                    🗑️
+                                </button>
+                            </div>
                         )}
                     </div>
-                    <div className="prose prose-sm dark:prose-invert text-slate-700 dark:text-slate-300">
-                        <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
-                            {comment.content}
-                        </ReactMarkdown>
-                    </div>
+
+                    {isEditing ? (
+                        <div className="space-y-4">
+                            <textarea
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[100px]"
+                            />
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        setEditContent(comment.content);
+                                    }}
+                                    className="px-4 py-2 text-xs font-bold text-slate-500"
+                                >
+                                    {isArabic ? 'إلغاء' : 'Cancel'}
+                                </button>
+                                <button
+                                    onClick={handleUpdateSubmit}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold"
+                                >
+                                    {isArabic ? 'حفظ التغييرات' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="prose prose-sm dark:prose-invert text-slate-700 dark:text-slate-300">
+                            <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
+                                {comment.content}
+                            </ReactMarkdown>
+                        </div>
+                    )}
 
                     <div className="flex items-center gap-4 mt-2">
-                        {user && (
+                        {user && !isEditing && (
                             <button
                                 onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                                 className="text-xs font-bold text-blue-600 hover:underline"
                             >
-                                Reply
+                                {isArabic ? 'رد' : 'Reply'}
                             </button>
                         )}
                     </div>
@@ -256,7 +328,7 @@ function CommentCard({
                             <textarea
                                 value={replyContent}
                                 onChange={(e) => setReplyContent(e.target.value)}
-                                placeholder="Write a reply..."
+                                placeholder={isArabic ? 'اكتب رداً...' : 'Write a reply...'}
                                 className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none text-sm min-h-[80px]"
                             />
                             <div className="flex justify-end gap-2">
@@ -264,13 +336,13 @@ function CommentCard({
                                     onClick={() => setReplyingTo(null)}
                                     className="px-4 py-2 text-xs font-bold text-slate-500"
                                 >
-                                    Cancel
+                                    {isArabic ? 'إلغاء' : 'Cancel'}
                                 </button>
                                 <button
                                     onClick={() => onReply(comment.id)}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold"
+                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold"
                                 >
-                                    Post Reply
+                                    {isArabic ? 'نشر الرد' : 'Post Reply'}
                                 </button>
                             </div>
                         </motion.div>
@@ -286,6 +358,8 @@ function CommentCard({
                                         comment={reply}
                                         user={user}
                                         onDelete={onDelete}
+                                        onUpdate={onUpdate}
+                                        isArabic={isArabic}
                                     />
                                 ))}
                             </div>
@@ -296,6 +370,3 @@ function CommentCard({
         </motion.div>
     );
 }
-
-// Helper Link component since we are using react-router-dom
-import { Link } from 'react-router-dom';

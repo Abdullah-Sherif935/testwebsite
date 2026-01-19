@@ -90,34 +90,36 @@ export function Hero() {
                             className="flex flex-row gap-5 justify-center lg:justify-start"
                             variants={fadeInUp}
                         >
-                            <Link to="/resources">
+                            <Link to="/projects">
                                 <motion.div
                                     className="px-8 py-3 bg-[#0e4c5e] text-cyan-50 rounded-[4px] font-medium hover:bg-[#126b85] transition-all shadow-lg shadow-cyan-900/20 text-lg"
                                     whileHover={buttonHover}
                                     whileTap={buttonTap}
                                 >
-                                    {t('hero.cta.library')}
+                                    {t('hero.cta.projects')}
                                 </motion.div>
                             </Link>
 
                             <motion.a
-                                href="https://youtube.com/@engabdullah-sherif"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-8 py-3 bg-transparent text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-[4px] font-medium hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2 text-lg"
+                                href="#contact"
+                                className="px-8 py-3 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-200 rounded-[4px] font-medium hover:bg-slate-300 dark:hover:bg-white/20 transition-all text-lg"
                                 whileHover={buttonHover}
                                 whileTap={buttonTap}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    const contactSection = document.getElementById('contact');
+                                    if (contactSection) {
+                                        contactSection.scrollIntoView({ behavior: 'smooth' });
+                                    }
+                                }}
                             >
-                                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
-                                </svg>
-                                {t('hero.cta.youtube')}
+                                {t('hero.cta.contact')}
                             </motion.a>
                         </motion.div>
                     </motion.div>
                 </div>
 
             </div>
-        </section>
+        </section >
     );
 }

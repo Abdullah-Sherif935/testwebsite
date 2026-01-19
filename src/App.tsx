@@ -19,7 +19,7 @@ import { NotFound } from './pages/NotFound';
 import { Auth } from './pages/Auth/Auth';
 import { Profile } from './pages/Profile/Profile';
 
-// Admin Pages
+import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminArticles } from './pages/admin/Articles';
 import { AdminArticleForm } from './pages/admin/ArticleForm';
 import { AdminVideos } from './pages/admin/Videos';
@@ -36,6 +36,7 @@ import { ProjectDetail } from './pages/ProjectDetail';
 
 // Context & Protection
 import { AuthProvider } from './context/AuthContext';
+import { AdminAuthProvider } from './context/AdminAuthContext';
 import { ProtectedRoute } from './components/admin/ProtectedRoute';
 
 function App() {
@@ -75,36 +76,38 @@ function App() {
   );
 
   const adminRoutes = (
-    <Routes>
-      <Route path="/admin/login" element={<Auth />} />
-      <Route
-        path="/admin/*"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} /> {/* Default admin route */}
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="articles" element={<AdminArticles />} />
-                <Route path="articles/new" element={<AdminArticleForm />} />
-                <Route path="articles/edit/:id" element={<AdminArticleForm />} />
-                <Route path="videos" element={<AdminVideos />} />
-                <Route path="resources" element={<AdminResources />} />
-                <Route path="projects" element={<AdminProjects />} />
-                <Route path="projects/new" element={<AdminProjectForm />} />
-                <Route path="projects/edit/:id" element={<AdminProjectForm />} />
-                <Route path="profile" element={<AdminProfile />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="messages" element={<AdminMessages />} />
-                <Route path="comments" element={<AdminComments />} />
-                {/* Default redirect to articles */}
-                <Route path="*" element={<AdminArticles />} />
-              </Routes>
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+    <AdminAuthProvider>
+      <Routes>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute>
+              <AdminLayout>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} /> {/* Default admin route */}
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="articles" element={<AdminArticles />} />
+                  <Route path="articles/new" element={<AdminArticleForm />} />
+                  <Route path="articles/edit/:id" element={<AdminArticleForm />} />
+                  <Route path="videos" element={<AdminVideos />} />
+                  <Route path="resources" element={<AdminResources />} />
+                  <Route path="projects" element={<AdminProjects />} />
+                  <Route path="projects/new" element={<AdminProjectForm />} />
+                  <Route path="projects/edit/:id" element={<AdminProjectForm />} />
+                  <Route path="profile" element={<AdminProfile />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="messages" element={<AdminMessages />} />
+                  <Route path="comments" element={<AdminComments />} />
+                  {/* Default redirect to articles */}
+                  <Route path="*" element={<AdminArticles />} />
+                </Routes>
+              </AdminLayout>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </AdminAuthProvider>
   );
 
   return (
