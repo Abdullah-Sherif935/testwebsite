@@ -144,14 +144,14 @@ export function Header() {
                     {!user && (
                         <Link
                             to="/auth"
-                            className="hidden sm:flex px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                            className="flex px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
                         >
                             {isArabic ? 'دخول' : 'Login'}
                         </Link>
                     )}
                 </div>
 
-                {/* CENTER CONTAINER: Nav Links */}
+                {/* CENTER: Desktop Nav */}
                 <nav className="hidden md:flex items-center gap-6 lg:gap-8">
                     {navItems.map((item) => {
                         const active = isActive(item.to);
@@ -178,7 +178,7 @@ export function Header() {
                     })}
                 </nav>
 
-                {/* RIGHT CONTAINER (Visually LEFT in RTL) */}
+                {/* RIGHT: User & Actions */}
                 <div className="flex items-center gap-2 sm:gap-3">
                     <motion.button
                         onClick={toggleTheme}
@@ -189,7 +189,7 @@ export function Header() {
                         {theme === 'dark' ? '☀️' : '🌙'}
                     </motion.button>
 
-                    <Link to="/saved-articles" className="hidden sm:block">
+                    <Link to="/saved-articles">
                         <motion.button
                             className="p-2 rounded-full text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 relative"
                             whileHover={buttonHover}
