@@ -19,6 +19,21 @@ const fetchWithRetry = async <T>(fetcher: () => Promise<any>, fallback: T[], ret
     return fallback;
 };
 
+export async function getAuthorStats(authorId: string) {
+    const { data, error } = await supabase
+        .from('author_rating_stats')
+        .select('*')
+        .eq('author_id', authorId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching author stats:', error);
+        return { total_ratings: 0, average_rating: 0 };
+    }
+
+    return data || { total_ratings: 0, average_rating: 0 };
+}
+
 export async function getAllArticles(): Promise<Article[]> {
     return fetchWithRetry<Article>(async () => {
         const response = await supabase
@@ -153,7 +168,11 @@ export async function getArticleComments(articleId: string) {
         .from('article_comments')
         .select(`
             *,
-            author:user_profiles (full_name_ar, avatar_url)
+            author:user_profiles (
+                full_name_ar,
+                full_name_en,
+                avatar_url
+            )
         `)
         .eq('article_id', articleId)
         .order('created_at', { ascending: true });
@@ -173,7 +192,7 @@ export async function getArticleComments(articleId: string) {
     }));
 }
 
-export async function postComment(articleId: string, userId: string, content: string, parentId: string | null = null) {
+export async function postComment(articleId: string, userId: string, content: string, rating: number | null = null, parentId: string | null = null) {
     const { cleanText, isFlagged } = filterProfanity(content);
 
     // Strict requirement: If flagged, we can choose to block or just sanitize.
@@ -189,6 +208,7 @@ export async function postComment(articleId: string, userId: string, content: st
             article_id: articleId,
             user_id: userId,
             content: cleanText,
+            rating: rating,
             parent_id: parentId
         }]);
 }

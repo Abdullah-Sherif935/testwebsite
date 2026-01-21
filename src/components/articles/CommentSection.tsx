@@ -22,6 +22,8 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyContent, setReplyContent] = useState('');
     const [user, setUser] = useState<any>(null);
+    const [rating, setRating] = useState<number>(0);
+    const [hoverRating, setHoverRating] = useState<number>(0);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,17 +42,21 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     }, [articleId]);
 
     async function fetchComments() {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(articleId);
-
-        if (!isUuid) {
+        // Simple check: if no articleId, don't fetch
+        if (!articleId) {
             setLoading(false);
             return;
         }
 
         setLoading(true);
-        const data = await getArticleComments(articleId);
-        setComments(data);
-        setLoading(false);
+        try {
+            const data = await getArticleComments(articleId);
+            setComments(data || []);
+        } catch (err) {
+            console.error('Error fetching comments:', err);
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -64,11 +70,12 @@ export function CommentSection({ articleId }: CommentSectionProps) {
         }
 
         try {
-            const { error } = await postComment(articleId, user.id, newComment);
+            const { error } = await postComment(articleId, user.id, newComment, rating > 0 ? rating : null);
             if (error) {
                 alert(error.message);
             } else {
                 setNewComment('');
+                setRating(0);
                 fetchComments();
             }
         } catch (err: any) {
@@ -79,7 +86,7 @@ export function CommentSection({ articleId }: CommentSectionProps) {
     async function handleReply(parentId: string) {
         if (!user || !replyContent.trim()) return;
 
-        const { error } = await postComment(articleId, user.id, replyContent, parentId);
+        const { error } = await postComment(articleId, user.id, replyContent, null, parentId);
         if (error) {
             alert(error.message);
         } else {
@@ -123,18 +130,14 @@ export function CommentSection({ articleId }: CommentSectionProps) {
         );
     }
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(articleId);
-
-    if (!isUuid) {
+    // Simplified check: only show comments if we have an articleId
+    if (!articleId) {
         return (
             <div className="mt-16 p-8 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center">
                 <span className="text-3xl mb-3 block">💡</span>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                    {isArabic ? 'التعليقات متاحة للمقالات الحقيقية فقط' : 'Comments available on real articles'}
+                    {isArabic ? 'التعليقات غير متاحة حالياً' : 'Comments unavailable'}
                 </h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                    {isArabic ? 'هذه مقالة افتراضية. أنشئ مقالة حقيقية من لوحة التحكم لتفعيل التعليقات.' : 'This is a placeholder article. Create a real article from the Admin Panel to enable user discussions.'}
-                </p>
             </div>
         );
     }
@@ -148,12 +151,36 @@ export function CommentSection({ articleId }: CommentSectionProps) {
             </div>
 
             {user ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4 bg-slate-50 dark:bg-slate-900/40 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <div className="flex flex-col gap-2 mb-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                            {isArabic ? 'تقييمك للمقال:' : 'Your Rating:'}
+                        </label>
+                        <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setRating(star)}
+                                    onMouseEnter={() => setHoverRating(star)}
+                                    onMouseLeave={() => setHoverRating(0)}
+                                    className="text-2xl transition-transform hover:scale-125 focus:outline-none"
+                                >
+                                    {star <= (hoverRating || rating) ? '⭐' : '☆'}
+                                </button>
+                            ))}
+                            {rating > 0 && (
+                                <span className="text-xs text-slate-500 mt-2 ml-2 self-center">
+                                    ({rating}/5)
+                                </span>
+                            )}
+                        </div>
+                    </div>
                     <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder={isArabic ? 'اكتب تعليقاً...' : 'Write a comment...'}
-                        className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px]"
+                        className="w-full p-3 md:p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none min-h-[100px] text-sm md:text-base"
                     />
                     <div className="flex justify-end">
                         <motion.button
@@ -235,12 +262,12 @@ function CommentCard({
             animate={{ opacity: 1, y: 0 }}
             className="group"
         >
-            <div className="flex gap-4">
+            <div className="flex gap-3 md:gap-4">
                 <div className="shrink-0">
-                    {comment.profiles?.avatar_url ? (
-                        <img src={comment.profiles.avatar_url} alt="" className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-800" />
+                    {comment.author?.avatar_url ? (
+                        <img src={comment.author.avatar_url} alt="" className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-800 object-cover" />
                     ) : (
-                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 text-xl border border-slate-200 dark:border-slate-700">
                             👤
                         </div>
                     )}
@@ -249,11 +276,20 @@ function CommentCard({
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="font-bold text-slate-900 dark:text-white mr-2">
-                                {comment.profiles?.full_name || (isArabic ? 'مستخدم مجهول' : 'Anonymous')}
+                                {comment.author?.full_name_ar || (isArabic ? 'مستخدم مجهول' : 'Anonymous')}
                             </span>
                             <span className="text-xs text-slate-500">
                                 {new Date(comment.created_at).toLocaleDateString()}
                             </span>
+                            {comment.rating && (
+                                <div className="flex gap-0.5 ml-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <span key={star} className="text-[10px]">
+                                            {star <= comment.rating ? '⭐' : '☆'}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                         {isOwner && (
                             <div className="flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">

@@ -11,6 +11,7 @@ import { UserProfileForm } from './UserProfileForm';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
 import { getUserProfile, type UserProfile } from '../../services/profile';
 import { uploadProfilePicture } from '../../services/verification';
+import { getAuthorStats } from '../../services/articles';
 
 export function Profile() {
     const { user, signOut } = useAuth();
@@ -21,6 +22,7 @@ export function Profile() {
     const [userArticles, setUserArticles] = useState<Article[]>([]);
     const [loadingArticles, setLoadingArticles] = useState(false);
     const [stats, setStats] = useState({ saved: 0, read: 0 });
+    const [ratingStats, setRatingStats] = useState({ total_ratings: 0, average_rating: 0 });
     const [loadingStats, setLoadingStats] = useState(true);
     const [activeTab, setActiveTab] = useState<'info' | 'articles' | 'cv'>('info');
     const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
@@ -51,8 +53,12 @@ export function Profile() {
     async function fetchProfile() {
         if (!user) return;
         try {
-            const profile = await getUserProfile(user.id);
+            const [profile, rStats] = await Promise.all([
+                getUserProfile(user.id),
+                getAuthorStats(user.id)
+            ]);
             setUserProfile(profile);
+            setRatingStats(rStats);
             // Cache the profile
             if (profile) {
                 localStorage.setItem(`profile_${user.id}`, JSON.stringify(profile));
@@ -233,10 +239,21 @@ export function Profile() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3 w-full md:w-auto">
+                            {ratingStats.total_ratings > 0 && (
+                                <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl border border-yellow-200 dark:border-yellow-800/30">
+                                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                                        <span className="text-xl font-black text-yellow-600 dark:text-yellow-400 leading-none">{ratingStats.average_rating}</span>
+                                        <span className="text-sm">⭐</span>
+                                    </div>
+                                    <span className="text-[10px] uppercase tracking-wider text-yellow-600/70 dark:text-yellow-400/70 font-bold block">
+                                        ({ratingStats.total_ratings} {isArabic ? 'تقييم' : 'Ratings'})
+                                    </span>
+                                </div>
+                            )}
                             <button
                                 onClick={handleSignOut}
-                                className="px-6 py-2.5 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-600 hover:text-white transition-all"
+                                className="w-full md:w-auto px-6 py-2.5 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95"
                             >
                                 {isArabic ? 'تسجيل الخروج' : 'Sign Out'}
                             </button>

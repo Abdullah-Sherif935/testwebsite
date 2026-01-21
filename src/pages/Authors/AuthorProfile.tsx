@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { getUserProfile } from '../../services/profile';
 import type { UserProfile } from '../../services/profile';
-import { getAuthorArticles } from '../../services/articles';
+import { getAuthorArticles, getAuthorStats } from '../../services/articles';
 import type { Article } from '../../types/article';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
 import { pageTransition } from '../../utils/animations';
@@ -17,6 +17,7 @@ export function AuthorProfile() {
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [articles, setArticles] = useState<Article[]>([]);
+    const [stats, setStats] = useState({ total_ratings: 0, average_rating: 0 });
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'articles' | 'about'>('articles');
 
@@ -29,12 +30,14 @@ export function AuthorProfile() {
     async function loadAuthorData() {
         setLoading(true);
         try {
-            const [profileData, articlesData] = await Promise.all([
+            const [profileData, articlesData, statsData] = await Promise.all([
                 getUserProfile(id!),
-                getAuthorArticles(id!)
+                getAuthorArticles(id!),
+                getAuthorStats(id!)
             ]);
             setProfile(profileData);
             setArticles(articlesData);
+            setStats(statsData);
         } catch (error) {
             console.error('Error loading author data:', error);
         } finally {
@@ -130,6 +133,18 @@ export function AuthorProfile() {
                                     {isArabic ? 'مقالة منشورة' : 'Published Articles'}
                                 </span>
                             </div>
+
+                            {stats.total_ratings > 0 && (
+                                <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl border border-yellow-100 dark:border-yellow-800/50">
+                                    <div className="flex items-center justify-center gap-1 mb-1">
+                                        <span className="text-xl font-black text-yellow-600 dark:text-yellow-400">{stats.average_rating}</span>
+                                        <span className="text-sm">⭐</span>
+                                    </div>
+                                    <span className="text-[10px] uppercase tracking-wider text-yellow-600/70 dark:text-yellow-400/70 font-bold">
+                                        ({stats.total_ratings} {isArabic ? 'تقييم' : 'Ratings'})
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
