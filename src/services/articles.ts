@@ -291,10 +291,13 @@ export async function submitUserArticle(articleData: Partial<Article>) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
+    // Clean the data to prevent ID conflicts or unexpected fields
+    const { id: _, ...cleanData } = articleData;
+
     return await supabase
         .from('articles')
         .insert([{
-            ...articleData,
+            ...cleanData,
             user_id: user.id,
             moderation_status: 'pending',
             created_at: new Date().toISOString(),
@@ -306,9 +309,11 @@ export async function updateUserArticle(articleId: string, updates: Partial<Arti
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Unauthorized');
 
+    const { id: _, ...cleanUpdates } = updates;
+
     // If updating content, it goes to pending_content_rich for review
     const finalUpdates: any = {
-        ...updates,
+        ...cleanUpdates,
         moderation_status: 'pending',
         updated_at: new Date().toISOString()
     };

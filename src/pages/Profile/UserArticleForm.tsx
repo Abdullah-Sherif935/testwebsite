@@ -192,7 +192,8 @@ export function UserArticleForm() {
             }
             navigate('/profile');
         } catch (error: any) {
-            alert(isArabic ? '❌ خطأ أثناء الحفظ: ' : '❌ Error saving: ' + error.message);
+            console.error('Submission error:', error);
+            alert((isArabic ? '❌ خطأ أثناء الحفظ: ' : '❌ Error saving: ') + (error.message || JSON.stringify(error)));
         } finally {
             setSaving(false);
         }

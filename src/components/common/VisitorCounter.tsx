@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { logVisit, getTotalViews } from '../../services/stats';
 
 export function VisitorCounter() {
-    const [views, setViews] = useState<number>(0);
-    const [isLoading, setIsLoading] = useState(true);
+    const [views, setViews] = useState<number>(() => {
+        const cached = localStorage.getItem('total_visitor_count');
+        return cached ? parseInt(cached) : 0;
+    });
+    const [isLoading, setIsLoading] = useState(() => !localStorage.getItem('total_visitor_count'));
 
     useEffect(() => {
         const initCounter = async () => {
@@ -19,6 +22,7 @@ export function VisitorCounter() {
                 // Fetch total views using lightweight function
                 const totalViews = await getTotalViews();
                 setViews(totalViews);
+                localStorage.setItem('total_visitor_count', totalViews.toString());
             } catch (error) {
                 console.error('VisitorCounter error:', error);
                 // Keep views at 0 on error
@@ -30,14 +34,9 @@ export function VisitorCounter() {
         initCounter();
     }, []);
 
-    if (isLoading) {
+    if (isLoading && views === 0) {
         return (
-            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
-                <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-slate-300 dark:bg-slate-700 rounded-full animate-pulse"></span>
-                    Loading...
-                </span>
-            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 w-[100px] h-[30px] animate-pulse" />
         );
     }
 

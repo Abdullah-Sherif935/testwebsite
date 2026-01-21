@@ -20,10 +20,21 @@ export function Profile() {
     const navigate = useNavigate();
 
     const [userArticles, setUserArticles] = useState<Article[]>([]);
-    const [loadingArticles, setLoadingArticles] = useState(false);
-    const [stats, setStats] = useState({ saved: 0, read: 0 });
-    const [ratingStats, setRatingStats] = useState({ total_ratings: 0, average_rating: 0 });
-    const [loadingStats, setLoadingStats] = useState(true);
+    const [stats, setStats] = useState(() => {
+        if (user) {
+            const cached = localStorage.getItem(`stats_${user.id}`);
+            if (cached) return JSON.parse(cached);
+        }
+        return { saved: 0, read: 0 };
+    });
+    const [ratingStats, setRatingStats] = useState(() => {
+        if (user) {
+            const cached = localStorage.getItem(`rating_${user.id}`);
+            if (cached) return JSON.parse(cached);
+        }
+        return { total_ratings: 0, average_rating: 0 };
+    });
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'info' | 'articles' | 'cv'>('info');
     const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
         // Load from cache instantly to prevent flicker
@@ -44,28 +55,68 @@ export function Profile() {
 
     useEffect(() => {
         if (user) {
-            fetchStats();
-            fetchUserArticles();
-            fetchProfile();
+            loadAllData();
         }
     }, [user]);
 
-    async function fetchProfile() {
+    async function loadAllData() {
         if (!user) return;
+        setIsInitialLoading(true);
         try {
-            const [profile, rStats] = await Promise.all([
-                getUserProfile(user.id),
-                getAuthorStats(user.id)
+            // Fetch everything in parallel but don't set state yet
+            const [sData, aArticles, pData] = await Promise.all([
+                fetchStatsData(),
+                fetchUserArticlesData(),
+                fetchProfileData()
             ]);
-            setUserProfile(profile);
-            setRatingStats(rStats);
-            // Cache the profile
-            if (profile) {
-                localStorage.setItem(`profile_${user.id}`, JSON.stringify(profile));
+
+            // Set all states TOGETHER to prevent multiple renders and flickering
+            if (sData) {
+                setStats(sData);
+                localStorage.setItem(`stats_${user.id}`, JSON.stringify(sData));
+            }
+            if (aArticles) setUserArticles(aArticles);
+            if (pData) {
+                setUserProfile(pData.profile);
+                setRatingStats(pData.rStats);
+                // Cache both profile and rating
+                if (pData.profile) localStorage.setItem(`profile_${user.id}`, JSON.stringify(pData.profile));
+                if (pData.rStats) localStorage.setItem(`rating_${user.id}`, JSON.stringify(pData.rStats));
             }
         } catch (err) {
-            console.error('Error fetching profile:', err);
+            console.error('Error loading profile data:', err);
+        } finally {
+            setIsInitialLoading(false);
         }
+    }
+
+    async function fetchStatsData() {
+        const { data, error } = await supabase
+            .from('user_article_actions')
+            .select('is_saved, is_read')
+            .eq('user_id', user?.id);
+        if (error) return null;
+        const saved = (data as any[]).filter(a => a.is_saved).length;
+        const read = (data as any[]).filter(a => a.is_read).length;
+        return { saved, read };
+    }
+
+    async function fetchUserArticlesData() {
+        const { data, error } = await supabase
+            .from('articles')
+            .select('*')
+            .eq('user_id', user?.id)
+            .order('created_at', { ascending: false });
+        if (error) return [];
+        return data || [];
+    }
+
+    async function fetchProfileData() {
+        const [profile, rStats] = await Promise.all([
+            getUserProfile(user!.id),
+            getAuthorStats(user!.id)
+        ]);
+        return { profile, rStats };
     }
 
     async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -76,7 +127,10 @@ export function Profile() {
 
         try {
             await uploadProfilePicture(user.id, file);
-            await fetchProfile();
+            // Re-fetch only profile data to update UI
+            const pData = await fetchProfileData();
+            setUserProfile(pData.profile);
+            setRatingStats(pData.rStats);
             alert(isArabic ? '✅ تم تحديث الصورة الشخصية' : '✅ Profile picture updated');
         } catch (err: any) {
             alert(err.message || (isArabic ? '❌ فشل رفع الصورة' : '❌ Failed to upload'));
@@ -86,43 +140,6 @@ export function Profile() {
         }
     }
 
-
-    async function fetchUserArticles() {
-        setLoadingArticles(true);
-        try {
-            const { data, error } = await supabase
-                .from('articles')
-                .select('*')
-                .eq('user_id', user?.id)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            setUserArticles(data || []);
-        } catch (err) {
-            console.error('Error fetching user articles:', err);
-        } finally {
-            setLoadingArticles(false);
-        }
-    }
-
-    async function fetchStats() {
-        try {
-            const { data, error } = await supabase
-                .from('user_article_actions')
-                .select('is_saved, is_read')
-                .eq('user_id', user?.id);
-
-            if (error) throw error;
-
-            const saved = (data as any[]).filter(a => a.is_saved).length;
-            const read = (data as any[]).filter(a => a.is_read).length;
-            setStats({ saved, read });
-        } catch (err) {
-            console.error('Error fetching stats:', err);
-        } finally {
-            setLoadingStats(false);
-        }
-    }
 
     const handleSignOut = async () => {
         try {
@@ -239,18 +256,28 @@ export function Profile() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3 w-full md:w-auto">
-                            {ratingStats.total_ratings > 0 && (
-                                <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl border border-yellow-200 dark:border-yellow-800/30">
-                                    <div className="flex items-center justify-center gap-1 mb-0.5">
-                                        <span className="text-xl font-black text-yellow-600 dark:text-yellow-400 leading-none">{ratingStats.average_rating}</span>
-                                        <span className="text-sm">⭐</span>
-                                    </div>
-                                    <span className="text-[10px] uppercase tracking-wider text-yellow-600/70 dark:text-yellow-400/70 font-bold block">
-                                        ({ratingStats.total_ratings} {isArabic ? 'تقييم' : 'Ratings'})
-                                    </span>
-                                </div>
-                            )}
+                        <div className="flex flex-col gap-3 w-full md:w-auto min-w-[140px]">
+                            {/* Rating Section - Stabilized to prevent jumping */}
+                            <div className="min-h-[70px]">
+                                {ratingStats.total_ratings > 0 ? (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl border border-yellow-200 dark:border-yellow-800/30"
+                                    >
+                                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                                            <span className="text-xl font-black text-yellow-600 dark:text-yellow-400 leading-none">{ratingStats.average_rating}</span>
+                                            <span className="text-sm">⭐</span>
+                                        </div>
+                                        <span className="text-[10px] uppercase tracking-wider text-yellow-600/70 dark:text-yellow-400/70 font-bold block">
+                                            ({ratingStats.total_ratings} {isArabic ? 'تقييم' : 'Ratings'})
+                                        </span>
+                                    </motion.div>
+                                ) : isInitialLoading ? (
+                                    <div className="w-full h-[70px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl" />
+                                ) : null}
+                            </div>
+
                             <button
                                 onClick={handleSignOut}
                                 className="w-full md:w-auto px-6 py-2.5 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 font-bold rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95"
@@ -312,9 +339,9 @@ export function Profile() {
                                     <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-center">
                                         <div className="text-2xl mb-1">🔖</div>
                                         <div className="text-xs text-slate-500 uppercase">{isArabic ? 'المحفوظة' : 'Saved'}</div>
-                                        <div className="font-bold text-slate-900 dark:text-white text-xl">
-                                            {loadingStats ? (
-                                                <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mx-auto mt-2" />
+                                        <div className="font-bold text-slate-900 dark:text-white text-xl min-h-[28px] flex items-center justify-center">
+                                            {isInitialLoading && stats.saved === 0 ? (
+                                                <div className="w-8 h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded" />
                                             ) : (
                                                 stats.saved
                                             )}
@@ -323,9 +350,9 @@ export function Profile() {
                                     <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-center">
                                         <div className="text-2xl mb-1">✅</div>
                                         <div className="text-xs text-slate-500 uppercase">{isArabic ? 'مقروءة' : 'Read'}</div>
-                                        <div className="font-bold text-slate-900 dark:text-white text-xl">
-                                            {loadingStats ? (
-                                                <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mx-auto mt-2" />
+                                        <div className="font-bold text-slate-900 dark:text-white text-xl min-h-[28px] flex items-center justify-center">
+                                            {isInitialLoading && stats.read === 0 ? (
+                                                <div className="w-8 h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded" />
                                             ) : (
                                                 stats.read
                                             )}
@@ -350,7 +377,7 @@ export function Profile() {
                                 </Link>
                             </div>
 
-                            {loadingArticles ? (
+                            {isInitialLoading ? (
                                 <div className="py-12 flex justify-center">
                                     <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
                                 </div>
@@ -408,7 +435,8 @@ export function Profile() {
                                                                 try {
                                                                     const { error } = await supabase.from('articles').delete().eq('id', article.id);
                                                                     if (error) throw error;
-                                                                    fetchUserArticles();
+                                                                    const updatedData = await fetchUserArticlesData();
+                                                                    setUserArticles(updatedData);
                                                                 } catch (err: any) {
                                                                     alert(err.message);
                                                                 }
