@@ -161,8 +161,14 @@ export function UserArticleForm() {
             return;
         }
 
+        // Ensure slug is unique by appending a short random string for NEW articles
+        const submissionSlug = isEdit
+            ? formData.slug
+            : `${formData.slug}-${Math.random().toString(36).substring(2, 7)}`;
+
         const finalData = {
             ...formData,
+            slug: submissionSlug,
             content: '', // Fallback for DB
             content_md: '', // Fallback for DB
             category: formData.category === 'Other' ? customCategory : formData.category
