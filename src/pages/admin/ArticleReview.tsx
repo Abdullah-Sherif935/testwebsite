@@ -293,14 +293,14 @@ export function AdminReview() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-3 mb-2">
                                                 <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0">
-                                                    {article.profiles?.avatar_url ? (
-                                                        <img src={article.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                    {article.author?.avatar_url ? (
+                                                        <img src={article.author.avatar_url} alt="" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <span className="w-full h-full flex items-center justify-center text-[10px]">👤</span>
                                                     )}
                                                 </div>
                                                 <p className={`text-[10px] font-bold truncate ${selectedArticle?.id === article.id ? 'text-blue-100' : 'text-slate-500'}`}>
-                                                    {article.profiles?.full_name || article.profiles?.email}
+                                                    {article.author?.full_name_ar || article.author?.email}
                                                 </p>
                                                 <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${selectedArticle?.id === article.id ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-600'}`}>
                                                     {article.category}
@@ -421,7 +421,7 @@ export function AdminReview() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="text-sm text-slate-700 dark:text-slate-300">{article.profiles?.full_name || article.profiles?.email}</p>
+                                                <p className="text-sm text-slate-700 dark:text-slate-300">{article.author?.full_name_ar || article.author?.email}</p>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="px-3 py-1 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-bold">

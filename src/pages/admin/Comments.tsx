@@ -56,7 +56,7 @@ export function AdminComments() {
 
     const filteredComments = comments.filter(c =>
         c.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.profiles?.full_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.author?.full_name_ar || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (c.articles?.title || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -163,17 +163,17 @@ export function AdminComments() {
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm overflow-hidden shrink-0">
-                                                        {comment.profiles?.avatar_url ? (
-                                                            <img src={comment.profiles.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                        {comment.author?.avatar_url ? (
+                                                            <img src={comment.author.avatar_url} className="w-full h-full object-cover" alt="" />
                                                         ) : (
-                                                            (comment.profiles?.full_name?.[0] || 'U').toUpperCase()
+                                                            (comment.author?.full_name_ar?.[0] || 'U').toUpperCase()
                                                         )}
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                                                            {comment.profiles?.full_name || 'Anonymous User'}
+                                                            {comment.author?.full_name_ar || 'Anonymous User'}
                                                         </div>
-                                                        <div className="text-[10px] text-slate-400 truncate">{comment.profiles?.email}</div>
+                                                        <div className="text-[10px] text-slate-400 truncate">{comment.author?.email}</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -249,14 +249,14 @@ export function AdminComments() {
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white text-sm font-bold shadow-sm">
-                                            {comment.profiles?.avatar_url ? (
-                                                <img src={comment.profiles.avatar_url} className="w-full h-full object-cover rounded-xl" alt="" />
+                                            {comment.author?.avatar_url ? (
+                                                <img src={comment.author.avatar_url} className="w-full h-full object-cover rounded-xl" alt="" />
                                             ) : (
-                                                (comment.profiles?.full_name?.[0] || 'U').toUpperCase()
+                                                (comment.author?.full_name_ar?.[0] || 'U').toUpperCase()
                                             )}
                                         </div>
                                         <div>
-                                            <div className="font-bold text-slate-900 dark:text-white text-sm">{comment.profiles?.full_name}</div>
+                                            <div className="font-bold text-slate-900 dark:text-white text-sm">{comment.author?.full_name_ar}</div>
                                             <div className="text-[10px] text-slate-400">{new Date(comment.created_at).toLocaleDateString()}</div>
                                         </div>
                                     </div>
