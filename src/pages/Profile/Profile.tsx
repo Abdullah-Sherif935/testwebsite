@@ -10,7 +10,7 @@ import { fadeInUp, pageTransition } from '../../utils/animations';
 import { UserProfileForm } from './UserProfileForm';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
 import { getUserProfile, type UserProfile } from '../../services/profile';
-import { uploadProfilePicture, deleteProfilePicture } from '../../services/verification';
+import { uploadProfilePicture } from '../../services/verification';
 
 export function Profile() {
     const { user, signOut } = useAuth();
@@ -80,17 +80,6 @@ export function Profile() {
         }
     }
 
-    async function handleDeleteAvatar() {
-        if (!user || !window.confirm(isArabic ? 'هل تريد حذف الصورة الشخصية؟' : 'Delete profile picture?')) return;
-
-        try {
-            await deleteProfilePicture(user.id);
-            await fetchProfile();
-            alert(isArabic ? '✅ تم حذف الصورة' : '✅ Picture deleted');
-        } catch (err: any) {
-            alert(err.message);
-        }
-    }
 
     async function fetchUserArticles() {
         setLoadingArticles(true);

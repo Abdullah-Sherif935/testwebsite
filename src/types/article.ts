@@ -25,6 +25,7 @@ export interface Article {
         full_name_ar?: string;
         email?: string;
         cv_file_url?: string;
+        average_rating?: number;
     };
 }
 export interface ArticleAction {
@@ -40,6 +41,7 @@ export interface ArticleComment {
     article_id: string;
     user_id: string;
     content: string;
+    rating?: number | null;
     parent_id: string | null;
     created_at: string;
     author?: {

@@ -54,7 +54,7 @@ export function AdminReview() {
     async function fetchStats() {
         if (!user) return;
         try {
-            const data = await adminGetStats(user.email || '');
+            const data = await adminGetStats();
             setStats(data);
         } catch (err) {
             console.error('Error fetching stats:', err);
@@ -65,7 +65,7 @@ export function AdminReview() {
         if (!user) return;
         setLoading(true);
         try {
-            const data = await adminGetPendingArticles(user.email || '');
+            const data = await adminGetPendingArticles();
             setArticles(data || []);
         } catch (err) {
             console.error('Error fetching pending articles:', err);
@@ -78,7 +78,7 @@ export function AdminReview() {
         if (!user) return;
         setLoading(true);
         try {
-            const data = await adminGetApprovedArticles(user.email || '');
+            const data = await adminGetApprovedArticles();
             setPublishedArticles(data || []);
         } catch (err) {
             console.error('Error fetching published articles:', err);
@@ -91,7 +91,7 @@ export function AdminReview() {
         if (!user) return;
         setLoading(true);
         try {
-            const data = await adminGetAuthorsStats(user.email || '');
+            const data = await adminGetAuthorsStats();
             setAuthors(data || []);
         } catch (err) {
             console.error('Error fetching authors:', err);
