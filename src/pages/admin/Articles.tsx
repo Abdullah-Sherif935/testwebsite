@@ -62,6 +62,7 @@ export function AdminArticles() {
                             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-sm font-semibold">
                                 <th className="px-6 py-4">Title</th>
                                 <th className="px-6 py-4 hidden lg:table-cell">Category</th>
+                                <th className="px-6 py-4 hidden md:table-cell">Status</th>
                                 <th className="px-6 py-4 hidden sm:table-cell">Created At</th>
                                 <th className="px-6 py-4 text-right">Actions</th>
                             </tr>
@@ -93,6 +94,12 @@ export function AdminArticles() {
                                                 <span className="lg:hidden px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-[10px] font-semibold uppercase tracking-wider">
                                                     {article.category}
                                                 </span>
+                                                <span className={`md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase ${article.status === 'published'
+                                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                    }`}>
+                                                    {article.status}
+                                                </span>
                                                 <span className="sm:hidden text-slate-500 dark:text-slate-400">
                                                     {new Date(article.created_at).toLocaleDateString()}
                                                 </span>
@@ -101,6 +108,14 @@ export function AdminArticles() {
                                         <td className="px-6 py-4 hidden lg:table-cell">
                                             <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-xs font-semibold uppercase tracking-wider">
                                                 {article.category}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 hidden md:table-cell">
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${article.status === 'published'
+                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                }`}>
+                                                {article.status === 'published' ? '🟢 Published' : '🟡 Draft'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 hidden sm:table-cell">

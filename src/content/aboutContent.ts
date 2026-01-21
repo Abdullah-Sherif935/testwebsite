@@ -6,8 +6,8 @@ export const aboutContent = {
             title: "Robotics & Automation Engineer",
             summary: "Mechatronics Engineer specialized in building intelligent robotic systems and industrial automation solutions. Passionate about bridging the gap between software and hardware through hands-on engineering.",
             cta: {
-                projects: "/resources",
-                contact: "mailto:eng.abdullah.sherif@gmail.com",
+                projects: "/projects",
+                contact: "#contact",
                 cv: "#",
                 labels: {
                     projects: "View Projects",
@@ -203,8 +203,8 @@ export const aboutContent = {
             title: "مهندس ميكاترونيكس وأنظمة تحكم",
             summary: "مهندس ميكاترونيكس متخصص في بناء الأنظمة الروبوتية الذكية وحلول الأتمتة الصناعية. شغوف بسد الفجوة بين البرمجيات والهاردوير من خلال الهندسة التطبيقية والتصميم المتكامل.",
             cta: {
-                projects: "/resources",
-                contact: "mailto:eng.abdullah.sherif@gmail.com",
+                projects: "/projects",
+                contact: "#contact",
                 cv: "#",
                 labels: {
                     projects: "عرض المشاريع",

@@ -1,24 +1,28 @@
 import { useState, useEffect } from 'react';
-import { getCVUrl, updateCV, deleteCV } from '../../services/profile';
+import { getUserProfile, uploadUserCV, deleteUserCV, updateAdminCV } from '../../services/profile';
+import { useAdminAuth } from '../../context/AdminAuthContext';
+import { adminSupabase } from '../../services/adminSupabase';
 
 export function AdminProfile() {
+    const { user } = useAdminAuth();
     const [currentCvUrl, setCurrentCvUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     useEffect(() => {
-        loadCV();
-    }, []);
+        if (user) loadCV();
+    }, [user]);
 
     async function loadCV() {
-        const url = await getCVUrl();
-        if (url) setCurrentCvUrl(url);
+        if (!user) return;
+        const profile = await getUserProfile(user.id, adminSupabase);
+        if (profile?.cv_file_url) setCurrentCvUrl(profile.cv_file_url);
     }
 
     const [deleteConfirm, setDeleteConfirm] = useState(false);
 
     const handleDelete = async () => {
-        if (!currentCvUrl) return;
+        if (!currentCvUrl || !user) return;
 
         // If not yet confirmed, switch state to confirmation mode
         if (!deleteConfirm) {
@@ -30,7 +34,8 @@ export function AdminProfile() {
 
         setUploading(true);
         try {
-            await deleteCV(currentCvUrl);
+            await deleteUserCV(user.id, adminSupabase);
+            await updateAdminCV(null, adminSupabase); // Sync with admin settings
             setCurrentCvUrl(null);
             setDeleteConfirm(false);
             setMessage({ type: 'success', text: 'CV deleted successfully' });
@@ -45,7 +50,7 @@ export function AdminProfile() {
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
+        if (!file || !user) return;
 
         if (file.type !== 'application/pdf') {
             setMessage({ type: 'error', text: 'Please upload a PDF file.' });
@@ -56,8 +61,9 @@ export function AdminProfile() {
         setMessage(null);
 
         try {
-            const newUrl = await updateCV(file);
-            setCurrentCvUrl(newUrl);
+            const result = await uploadUserCV(user.id, file, adminSupabase);
+            await updateAdminCV(result.url, adminSupabase); // Sync with admin settings
+            setCurrentCvUrl(result.url);
             setMessage({ type: 'success', text: 'CV uploaded successfully!' });
         } catch (error: any) {
             console.error(error);

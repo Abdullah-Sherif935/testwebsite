@@ -8,12 +8,24 @@ export interface Article {
     content_rich?: any; // TipTap JSON
     category: string;
     status: 'draft' | 'published';
+    moderation_status: 'pending' | 'approved' | 'rejected';
+    moderation_note?: string;
+    user_id?: string;
+    author_name?: string;
+    pending_content_rich?: any;
     language: 'ar' | 'en';
     created_at: string;
     updated_at?: string;
     image_url?: string;
     tags?: string[];
     views_count: number;
+    author?: {
+        is_verified: boolean;
+        avatar_url: string;
+        full_name_ar?: string;
+        email?: string;
+        cv_file_url?: string;
+    };
 }
 export interface ArticleAction {
     id: string;
@@ -30,8 +42,8 @@ export interface ArticleComment {
     content: string;
     parent_id: string | null;
     created_at: string;
-    profiles?: {
-        full_name: string;
+    author?: {
+        full_name_ar: string;
         avatar_url: string;
     };
     replies?: ArticleComment[];

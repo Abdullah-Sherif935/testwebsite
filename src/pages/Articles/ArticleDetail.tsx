@@ -20,6 +20,7 @@ import type { Resource } from '../../types/resource';
 import { pageTransition } from '../../utils/animations';
 import { RichTextRenderer } from '../../components/common/RichTextRenderer';
 import { CommentSection } from '../../components/articles/CommentSection';
+import { VerifiedBadge } from '../../components/common/VerifiedBadge';
 
 // CSS for Math and Code Highlighting
 import 'katex/dist/katex.min.css';
@@ -192,23 +193,14 @@ export function ArticleDetail() {
             <div className="container mx-auto px-4 max-w-4xl">
                 {/* Header */}
                 <motion.div
-                    className="relative mb-8 text-center"
+                    className="relative mb-12 text-center"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                 >
-                    {/* Category Label */}
-                    <div className="mb-6">
-                        <div className="inline-block px-4 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-sm font-semibold whitespace-nowrap">
-                            {article.category}
-                        </div>
-                    </div>
-
-                    <div className="max-w-2xl mx-auto">
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-slate-900 dark:text-white leading-tight">
-                            {article.title}
-                        </h1>
-                    </div>
+                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black mb-8 text-slate-900 dark:text-white leading-tight">
+                        {article.title}
+                    </h1>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-slate-500 dark:text-slate-400 text-sm">
                         <time dateTime={article.created_at} className="flex items-center gap-2">
@@ -219,6 +211,22 @@ export function ArticleDetail() {
                                 day: 'numeric'
                             })}
                         </time>
+
+                        {/* Author */}
+                        <Link
+                            to={`/authors/${article.user_id}`}
+                            className="flex items-center gap-2 hover:opacity-80 transition-opacity group"
+                        >
+                            {article.author?.avatar_url ? (
+                                <img src={article.author.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border-2 border-slate-100 dark:border-slate-800" />
+                            ) : (
+                                <span className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-sm">👤</span>
+                            )}
+                            <span className="font-bold flex items-center gap-1 group-hover:text-blue-600 transition-colors">
+                                {article.author_name}
+                                {article.author?.is_verified && <VerifiedBadge size="sm" />}
+                            </span>
+                        </Link>
 
                         {/* Interaction Buttons */}
                         <div className="flex items-center gap-3">

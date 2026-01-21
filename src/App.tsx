@@ -15,12 +15,16 @@ import { SavedArticles } from './pages/Articles/SavedArticles';
 import { Resources } from './pages/Resources';
 import { About } from './pages/About';
 import { Videos } from './pages/Videos';
+import { AuthorProfile } from './pages/Authors/AuthorProfile';
 import { NotFound } from './pages/NotFound';
 import { Auth } from './pages/Auth/Auth';
 import { Profile } from './pages/Profile/Profile';
+import { UserArticleForm } from './pages/Profile/UserArticleForm';
 
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { AdminArticles } from './pages/admin/Articles';
+import { AdminReview } from './pages/admin/ArticleReview';
+import { AdminArticleEdit } from './pages/admin/AdminArticleEdit';
 import { AdminArticleForm } from './pages/admin/ArticleForm';
 import { AdminVideos } from './pages/admin/Videos';
 import { AdminResources } from './pages/admin/Resources';
@@ -31,6 +35,7 @@ import { Dashboard } from './pages/admin/Dashboard';
 import { AdminMessages } from './pages/admin/Messages';
 import { AdminComments } from './pages/admin/Comments';
 import { AdminUsers } from './pages/admin/Users';
+import { AdminVerificationPanel } from './pages/admin/AdminVerificationPanel';
 import { Projects } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
 
@@ -60,9 +65,12 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/articles" element={<Articles />} />
             <Route path="/articles/:slug" element={<ArticleDetail />} />
+            <Route path="/authors/:id" element={<AuthorProfile />} />
             <Route path="/saved-articles" element={<SavedArticles />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/articles/new" element={<UserArticleForm />} />
+            <Route path="/profile/articles/edit/:id" element={<UserArticleForm />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:slug" element={<ProjectDetail />} />
             <Route path="/resources" element={<Resources />} />
@@ -99,6 +107,9 @@ function App() {
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="messages" element={<AdminMessages />} />
                   <Route path="comments" element={<AdminComments />} />
+                  <Route path="verification" element={<AdminVerificationPanel />} />
+                  <Route path="users/articles" element={<AdminReview />} />
+                  <Route path="users/articles/edit/:id" element={<AdminArticleEdit />} />
                   {/* Default redirect to articles */}
                   <Route path="*" element={<AdminArticles />} />
                 </Routes>

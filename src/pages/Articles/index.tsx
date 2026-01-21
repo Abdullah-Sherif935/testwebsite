@@ -7,6 +7,7 @@ import { getAllArticles, getUserArticleInteractions } from '../../services/artic
 import { supabase } from '../../services/supabase';
 import { pageTransition } from '../../utils/animations';
 import type { Article } from '../../types/article';
+import { VerifiedBadge } from '../../components/common/VerifiedBadge';
 
 type SortOption = 'newest' | 'oldest';
 
@@ -17,6 +18,7 @@ export function Articles() {
     const [articles, setArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [selectedAuthor, setSelectedAuthor] = useState<string>('all');
     const [sortBy, setSortBy] = useState<SortOption>('newest');
     const [searchQuery, setSearchQuery] = useState('');
     const [interactions, setInteractions] = useState<Record<string, { is_saved: boolean, is_read: boolean }>>({});
@@ -51,11 +53,27 @@ export function Articles() {
         return ['all', ...Array.from(new Set(cats))];
     }, [articles]);
 
+    // Extract unique authors
+    const authors = useMemo(() => {
+        const auths = articles.map(a => ({
+            id: a.user_id,
+            name: a.author_name
+        }));
+        // Remove duplicates based on ID
+        const uniqueAuthors = Array.from(new Map(auths.map(a => [a.id, a])).values());
+        return [{ id: 'all', name: isArabic ? 'كل الكتّاب' : 'All Authors' }, ...uniqueAuthors];
+    }, [articles, isArabic]);
+
     // Filter and sort articles
     const filteredArticles = useMemo(() => {
         let filtered = selectedCategory === 'all'
             ? articles
             : articles.filter(a => a.category === selectedCategory);
+
+        // Author filter
+        if (selectedAuthor !== 'all') {
+            filtered = filtered.filter(a => a.user_id === selectedAuthor);
+        }
 
         // Search filter
         if (searchQuery.trim()) {
@@ -82,13 +100,6 @@ export function Articles() {
         });
     };
 
-    // Helper for read time
-    const estimateReadTime = (content: string) => {
-        const wordsPerMinute = 200;
-        const words = content.trim().split(/\s+/).length;
-        const minutes = Math.ceil(words / wordsPerMinute);
-        return t('cards.readTime', { count: minutes });
-    };
 
     return (
         <motion.div
@@ -152,6 +163,20 @@ export function Articles() {
                                 {categories.filter(c => c !== 'all').map((cat) => (
                                     <option key={cat} value={cat}>
                                         {cat}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        {/* Author Dropdown Filter */}
+                        <div className="w-full md:w-auto">
+                            <select
+                                value={selectedAuthor}
+                                onChange={(e) => setSelectedAuthor(e.target.value)}
+                                className="w-full md:min-w-[200px] px-4 py-2 text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-800 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                            >
+                                {authors.map((author) => (
+                                    <option key={author.id} value={author.id}>
+                                        {author.name}
                                     </option>
                                 ))}
                             </select>
@@ -243,12 +268,6 @@ export function Articles() {
                                                 )}
                                             </div>
 
-                                            {/* Category Overlay */}
-                                            <div className={`absolute top-4 ${isArabic ? 'left-4' : 'right-4'} z-10`}>
-                                                <span className="px-3 py-1 text-xs font-bold bg-white/90 dark:bg-slate-900/90 text-slate-900 dark:text-white rounded-full backdrop-blur-sm shadow-sm">
-                                                    {article.category}
-                                                </span>
-                                            </div>
                                         </div>
 
                                         <div className="p-6 flex flex-col flex-grow">
@@ -262,12 +281,25 @@ export function Articles() {
 
                                             <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 text-[10px] sm:text-xs text-slate-500 font-medium">
                                                 <div className="flex items-center gap-2">
+                                                    {article.author?.avatar_url ? (
+                                                        <img src={article.author.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                                                    ) : (
+                                                        <span>👤</span>
+                                                    )}
+                                                    <span className="flex items-center gap-1 font-bold">
+                                                        {article.author_name}
+                                                        {article.author?.is_verified && <VerifiedBadge size="xs" />}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
                                                     <span>📅</span>
                                                     <span>{formatDate(article.created_at)}</span>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span>⏱️</span>
-                                                    <span>{estimateReadTime(article.content_md || article.content || '')}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between mt-2 text-[10px] text-slate-400 font-medium">
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-100 dark:border-blue-800/50">
+                                                    <span>📂</span>
+                                                    <span className="font-bold">{article.category}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <span>👁️</span>

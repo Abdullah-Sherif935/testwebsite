@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { buttonHover, buttonTap } from '../../utils/animations';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { getUserProfile } from '../../services/profile';
+import { VerifiedBadge } from '../common/VerifiedBadge';
 
 export function Header() {
     const { t, i18n } = useTranslation();
@@ -37,6 +39,43 @@ export function Header() {
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isVerified, setIsVerified] = useState(() => {
+        // Try to load from cache instantly
+        if (user) {
+            const cached = localStorage.getItem(`verified_${user.id}`);
+            return cached === 'true';
+        }
+        return false;
+    });
+    const [profileAvatar, setProfileAvatar] = useState<string | null>(() => {
+        if (user) {
+            return localStorage.getItem(`avatar_${user.id}`);
+        }
+        return null;
+    });
+    const [isVerifiedLoading, setIsVerifiedLoading] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            setIsVerifiedLoading(true);
+            getUserProfile(user.id).then(profile => {
+                const verified = !!profile?.is_verified;
+                setIsVerified(verified);
+                setProfileAvatar(profile?.avatar_url || null);
+                // Cache results
+                localStorage.setItem(`verified_${user.id}`, String(verified));
+                if (profile?.avatar_url) {
+                    localStorage.setItem(`avatar_${user.id}`, profile.avatar_url);
+                }
+                setIsVerifiedLoading(false);
+            }).catch(() => {
+                setIsVerifiedLoading(false);
+            });
+        } else {
+            setIsVerifiedLoading(false);
+            setIsVerified(false);
+        }
+    }, [user]);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -75,9 +114,9 @@ export function Header() {
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                                 className="flex items-center gap-2 p-0.5 rounded-full border-2 border-transparent hover:border-blue-600/30 transition-all"
                             >
-                                <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-600/10 border border-blue-600/20 flex items-center justify-center">
-                                    {user.user_metadata?.avatar_url ? (
-                                        <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-600/10 border border-blue-600/20 flex items-center justify-center flex-shrink-0">
+                                    {(profileAvatar || user.user_metadata?.avatar_url) ? (
+                                        <img src={profileAvatar || user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
                                     ) : (
                                         <span className="text-sm">👤</span>
                                     )}
@@ -97,11 +136,14 @@ export function Header() {
                                         >
                                             <Link
                                                 to="/profile"
-                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                                className="flex items-center justify-between px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                                 onClick={() => setIsProfileOpen(false)}
                                             >
-                                                <span>👤</span>
-                                                {isArabic ? 'الملف الشخصي' : 'Profile'}
+                                                <div className="flex items-center gap-3">
+                                                    <span>👤</span>
+                                                    {isArabic ? 'الملف الشخصي' : 'Profile'}
+                                                </div>
+                                                {!isVerifiedLoading && isVerified && <VerifiedBadge size="xs" />}
                                             </Link>
                                             <button
                                                 type="button"
