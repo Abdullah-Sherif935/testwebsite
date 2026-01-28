@@ -7,7 +7,7 @@ export interface Article {
     content_md: string;
     content_rich?: any; // TipTap JSON
     category: string;
-    status: 'draft' | 'published';
+    status: 'draft' | 'published' | 'deleted_by_admin';
     moderation_status: 'pending' | 'approved' | 'rejected';
     moderation_note?: string;
     user_id?: string;

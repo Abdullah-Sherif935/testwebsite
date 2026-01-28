@@ -46,6 +46,9 @@ export function UserProfileForm() {
         linkedin_url: '',
     });
 
+    // Store initial data to check for sensitive changes like name
+    const [initialData, setInitialData] = useState<UserProfile | null>(null);
+
     const [newSkill, setNewSkill] = useState('');
 
     useEffect(() => {
@@ -62,6 +65,7 @@ export function UserProfileForm() {
             const profile = await getUserProfile(user.id);
             if (profile) {
                 setFormData(profile);
+                setInitialData(profile);
             }
         } catch (err) {
             console.error('Error loading profile:', err);
@@ -75,7 +79,35 @@ export function UserProfileForm() {
 
         setSaving(true);
         try {
+            // Check Name Change Restriction (20 Days)
+            const isNameChanged =
+                (formData.full_name_ar !== initialData?.full_name_ar) ||
+                (formData.full_name_en !== initialData?.full_name_en);
+
+            if (isNameChanged) {
+                const lastUpdate = formData.last_name_update ? new Date(formData.last_name_update) : new Date(0);
+                const now = new Date();
+                const daysSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+
+                if (daysSinceUpdate < 20) {
+                    const daysLeft = Math.ceil(20 - daysSinceUpdate);
+                    const msg = isArabic
+                        ? `⚠️ لا يمكنك تغيير الاسم حالياً. يجب مرور 20 يوماً بين كل تغيير. المتبقي: ${daysLeft} يوم.`
+                        : `⚠️ You cannot change your name yet. 20 days cooldown required. ${daysLeft} days remaining.`;
+                    alert(msg);
+                    setSaving(false);
+                    return;
+                }
+
+                // Update timestamp if change is allowed
+                formData.last_name_update = new Date().toISOString();
+            }
+
             await upsertUserProfile(user.id, formData);
+
+            // Update initial data after successful save
+            setInitialData(formData);
+
             alert(isArabic ? '✅ تم حفظ البيانات بنجاح' : '✅ Profile saved successfully');
         } catch (err: any) {
             alert(isArabic ? '❌ حدث خطأ أثناء الحفظ' : '❌ Error saving profile');
@@ -207,7 +239,7 @@ export function UserProfileForm() {
                 <div className="grid md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                            {isArabic ? 'الاسم (عربي)' : 'Full Name (Arabic)'}
+                            {isArabic ? 'الاسم (عربي) - يظهر كاسم الكاتب' : 'Full Name (Arabic) - Appears as Author'}
                         </label>
                         <input
                             type="text"
@@ -220,7 +252,7 @@ export function UserProfileForm() {
 
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                            {isArabic ? 'الاسم (إنجليزي)' : 'Full Name (English)'}
+                            {isArabic ? 'الاسم (إنجليزي) - يظهر كاسم الكاتب' : 'Full Name (English) - Appears as Author'}
                         </label>
                         <input
                             type="text"
@@ -229,6 +261,14 @@ export function UserProfileForm() {
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="Ahmed Mohamed"
                         />
+                    </div>
+
+                    <div className="col-span-1 md:col-span-2">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 p-3 rounded-lg border border-amber-100 dark:border-amber-800">
+                            {isArabic
+                                ? 'ℹ️ ملاحظة: هذا الاسم هو الذي سيظهر كـ "اسم الكاتب" على جميع مقالاتك. للحفاظ على الهوية، يُسمح بتغيير الاسم مرة واحدة فقط كل 20 يوماً.'
+                                : 'ℹ️ Note: This name will appear as "Author Name" on all your articles. To maintain identity, you can only change it once every 20 days.'}
+                        </p>
                     </div>
 
                     <div>
@@ -505,18 +545,18 @@ export function UserProfileForm() {
                 </h3>
 
                 <div className="space-y-4">
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                         <input
                             type="text"
                             value={newSkill}
                             onChange={(e) => setNewSkill(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                            className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full sm:flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder={isArabic ? 'أضف مهارة...' : 'Add a skill...'}
                         />
                         <button
                             onClick={addSkill}
-                            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all"
+                            className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 active:scale-95"
                         >
                             {isArabic ? 'إضافة' : 'Add'}
                         </button>

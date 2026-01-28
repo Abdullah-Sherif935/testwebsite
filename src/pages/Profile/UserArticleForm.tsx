@@ -57,6 +57,13 @@ export function UserArticleForm() {
             if (isEdit) {
                 await fetchArticle();
             } else {
+                // If new article, set author name from profile immediately
+                if (profile) {
+                    const name = profile.full_name_ar || profile.full_name_en;
+                    if (name) {
+                        setFormData(prev => ({ ...prev, author_name: name }));
+                    }
+                }
                 setLoading(false);
             }
         } catch (error) {
@@ -75,7 +82,21 @@ export function UserArticleForm() {
                 .single();
 
             if (error) throw error;
-            setFormData(data);
+            if (error) throw error;
+
+            // When editing, overwrite the stored author_name with the CURRENT profile name
+            // We need to fetch profile again or pass it? 
+            // Actually, checkVerification runs before or parallel? 
+            // To be safe, we fetch profile name here explicitly OR rely on the disabled input 
+            // but we must ENSURE the formData HAS the current name so it SAVES the current name.
+
+            const { data: profile } = await supabase.from('user_profiles').select('full_name_ar, full_name_en').eq('id', user?.id).single();
+            const currentName = profile?.full_name_ar || profile?.full_name_en || data.author_name;
+
+            setFormData({
+                ...data,
+                author_name: currentName // Force update to current profile name
+            });
             if (data.category && !categories.includes(data.category)) {
                 setCustomCategory(data.category);
                 setFormData(prev => ({ ...prev, category: 'Other' }));
@@ -111,8 +132,7 @@ export function UserArticleForm() {
 
     const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !formData.slug) {
-            if (!formData.slug) alert(isArabic ? 'يرجى كتابة العنوان أولاً' : 'Please enter title first');
+        if (!file) {
             return;
         }
 
@@ -196,7 +216,7 @@ export function UserArticleForm() {
                     : (isArabic ? '🚀 تم إرسال المقال للمراجعة بنجاح' : '🚀 Article submitted for review');
                 alert(msg);
             }
-            navigate('/profile');
+            navigate('/profile?tab=articles');
         } catch (error: any) {
             console.error('Submission error:', error);
             alert((isArabic ? '❌ خطأ أثناء الحفظ: ' : '❌ Error saving: ') + (error.message || JSON.stringify(error)));
@@ -230,7 +250,7 @@ export function UserArticleForm() {
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="flex items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-4">
-                        <Link to="/profile" className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                        <Link to="/profile?tab=articles" className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
                             {isArabic ? '⬅️' : '⬅️'}
                         </Link>
                         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
@@ -270,9 +290,15 @@ export function UserArticleForm() {
                                         const val = e.target.value;
                                         setFormData(prev => ({ ...prev, author_name: val }));
                                     }}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder={isArabic ? 'اسمه ليظهر فوق المقال' : 'Name to show as author'}
+                                    disabled
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 cursor-not-allowed font-bold"
                                 />
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {isArabic
+                                        ? 'يتم استرداد اسم الكاتب تلقائياً من الملف الشخصي. لتغييره، اذهب إلى إعدادات الملف الشخصي (مسموح كل 20 يوم).'
+                                        : 'Author name is fetched from your profile. To change it, go to Profile Settings (allowed once every 20 days).'
+                                    }
+                                </p>
                             </div>
 
                             <div>

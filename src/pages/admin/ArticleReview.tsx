@@ -31,7 +31,7 @@ export function AdminReview() {
 
     // New state for tabs and stats
     const [activeTab, setActiveTab] = useState<'pending' | 'published' | 'authors'>('pending');
-    const [stats, setStats] = useState({ published: 0, total: 0, pending: 0, rejected: 0 });
+    const [stats, setStats] = useState({ published: 0, total: 0, pending: 0, rejected: 0, authors: 0 });
     const [publishedArticles, setPublishedArticles] = useState<any[]>([]);
 
     // Authors Tab State
@@ -101,7 +101,7 @@ export function AdminReview() {
     }
 
     async function handleAuthorClick(author: any) {
-        if (!user) return;
+        if (!user || !author?.id) return;
         setSelectedAuthor(author);
         setLoading(true);
         try {
@@ -254,7 +254,7 @@ export function AdminReview() {
                             : 'text-slate-500 hover:text-slate-700'
                             }`}
                     >
-                        {isArabic ? 'الكتّاب' : 'Authors'}
+                        {isArabic ? `الكتّاب (${stats.authors || 0})` : `Authors (${stats.authors || 0})`}
                     </button>
                 </div>
             </div>
@@ -561,6 +561,13 @@ export function AdminReview() {
                                                         {article.status.toUpperCase()}
                                                     </span>
                                                     <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => window.open(`/articles/${article.slug}`, '_blank')}
+                                                            className="text-green-600 hover:text-green-800 text-sm font-bold bg-green-50 px-3 py-1 rounded-lg"
+                                                            title={isArabic ? 'عرض' : 'View'}
+                                                        >
+                                                            👁️
+                                                        </button>
                                                         <button
                                                             onClick={() => navigate(`/admin/users/articles/edit/${article.id}`)}
                                                             className="text-blue-600 hover:text-blue-800 text-sm font-bold bg-blue-50 px-3 py-1 rounded-lg"

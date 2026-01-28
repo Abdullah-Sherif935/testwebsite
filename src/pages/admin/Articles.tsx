@@ -13,15 +13,35 @@ export function AdminArticles() {
 
     async function fetchArticles() {
         setLoading(true);
+
+        const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || '').toLowerCase().trim();
+
+        // Fetch author info too
         const { data, error } = await supabase
             .from('articles')
-            .select('*')
+            .select('*, author:user_profiles(full_name_ar, full_name_en, email)')
             .order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching articles:', error);
         } else {
-            setArticles(data || []);
+            // Client-side filtering to ensure correctness:
+            // 1. Show 'published' articles (from anyone)
+            // 2. Show 'draft' articles ONLY if they belong to the defined ADMIN
+            // 3. Hide 'deleted_by_admin'
+            const filtered = (data || []).filter(article => {
+                if (article.status === 'deleted_by_admin') return false;
+                if (article.status === 'published') return true;
+
+                // For drafts, strictly check if the author email matches the Admin Email
+                if (article.status === 'draft') {
+                    const authorEmail = article.author?.email?.toLowerCase().trim();
+                    return authorEmail === ADMIN_EMAIL && ADMIN_EMAIL !== '';
+                }
+
+                return false;
+            });
+            setArticles(filtered);
         }
         setLoading(false);
     }
@@ -60,7 +80,8 @@ export function AdminArticles() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-sm font-semibold">
-                                <th className="px-6 py-4">Title</th>
+                                <th className="px-6 py-4">Article Title</th>
+                                <th className="px-6 py-4">Author</th> {/* New Column */}
                                 <th className="px-6 py-4 hidden lg:table-cell">Category</th>
                                 <th className="px-6 py-4 hidden md:table-cell">Status</th>
                                 <th className="px-6 py-4 hidden sm:table-cell">Created At</th>
@@ -71,99 +92,105 @@ export function AdminArticles() {
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={4} className="px-6 py-4">
+                                        <td colSpan={6} className="px-6 py-4">
                                             <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded w-2/3"></div>
                                         </td>
                                     </tr>
                                 ))
                             ) : articles.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                                         No articles found. Create your first one!
                                     </td>
                                 </tr>
                             ) : (
-                                articles.map((article) => (
-                                    <tr key={article.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-slate-900 dark:text-white truncate max-w-xs">
-                                                {article.title}
-                                            </div>
-                                            <div className="flex flex-wrap gap-2 mt-1 text-xs">
-                                                <span className="text-slate-500 dark:text-slate-400 font-mono">{article.slug}</span>
-                                                <span className="lg:hidden px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-[10px] font-semibold uppercase tracking-wider">
+                                articles.map((article: any) => {
+                                    const authorName = article.author?.full_name_en || article.author?.full_name_ar || article.author?.email || 'Unknown';
+                                    return (
+                                        <tr key={article.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="font-medium text-slate-900 dark:text-white truncate max-w-xs" title={article.title}>
+                                                    {article.title || 'Untitled'}
+                                                </div>
+                                                <div className="flex flex-wrap gap-2 mt-1 text-xs">
+                                                    <span className="text-slate-500 dark:text-slate-400 font-mono">{article.slug}</span>
+                                                    <span className="lg:hidden px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-[10px] font-semibold uppercase tracking-wider">
+                                                        {article.category}
+                                                    </span>
+                                                    <span className={`md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase ${article.status === 'published'
+                                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                        }`}>
+                                                        {article.status}
+                                                    </span>
+                                                    <span className="sm:hidden text-slate-500 dark:text-slate-400">
+                                                        {new Date(article.created_at).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-medium text-blue-600 dark:text-blue-400">
+                                                {authorName}
+                                            </td>
+                                            <td className="px-6 py-4 hidden lg:table-cell">
+                                                <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-xs font-semibold uppercase tracking-wider">
                                                     {article.category}
                                                 </span>
-                                                <span className={`md:hidden px-2 py-0.5 rounded text-[10px] font-bold uppercase ${article.status === 'published'
+                                            </td>
+                                            <td className="px-6 py-4 hidden md:table-cell">
+                                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${article.status === 'published'
                                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                                                     : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                                                     }`}>
-                                                    {article.status}
+                                                    {article.status === 'published' ? '🟢 Published' : '🟡 Draft'}
                                                 </span>
-                                                <span className="sm:hidden text-slate-500 dark:text-slate-400">
-                                                    {new Date(article.created_at).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 hidden lg:table-cell">
-                                            <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md text-xs font-semibold uppercase tracking-wider">
-                                                {article.category}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 hidden md:table-cell">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${article.status === 'published'
-                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                                }`}>
-                                                {article.status === 'published' ? '🟢 Published' : '🟡 Draft'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 hidden sm:table-cell">
-                                            {new Date(article.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-right space-x-2">
-                                            <Link
-                                                to={`/admin/articles/edit/${article.id}`}
-                                                className="inline-flex items-center justify-center w-9 h-9 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-colors"
-                                                title="Edit"
-                                            >
-                                                ✏️
-                                            </Link>
-                                            {deleteConfirm === article.id ? (
-                                                <div className="inline-flex items-center gap-1">
-                                                    <button
-                                                        onClick={() => deleteArticle(article.id)}
-                                                        className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded hover:bg-red-700 transition-colors"
-                                                    >
-                                                        CONFIRM
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setDeleteConfirm(null)}
-                                                        className="px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold rounded hover:bg-slate-300 transition-colors"
-                                                    >
-                                                        X
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => setDeleteConfirm(article.id)}
-                                                    className="inline-flex items-center justify-center w-9 h-9 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
-                                                    title="Delete"
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 hidden sm:table-cell">
+                                                {new Date(article.created_at).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4 text-right space-x-2">
+                                                <Link
+                                                    to={`/admin/articles/edit/${article.id}`}
+                                                    className="inline-flex items-center justify-center w-9 h-9 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-colors"
+                                                    title="Edit"
                                                 >
-                                                    🗑️
-                                                </button>
-                                            )}
-                                            <Link
-                                                to={`/articles/${article.slug}`}
-                                                target="_blank"
-                                                className="inline-flex items-center justify-center w-9 h-9 text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/10 rounded-lg transition-colors"
-                                                title="View Publicly"
-                                            >
-                                                👁️
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                ))
+                                                    ✏️
+                                                </Link>
+                                                {deleteConfirm === article.id ? (
+                                                    <div className="inline-flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => deleteArticle(article.id)}
+                                                            className="px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded hover:bg-red-700 transition-colors"
+                                                        >
+                                                            CONFIRM
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setDeleteConfirm(null)}
+                                                            className="px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold rounded hover:bg-slate-300 transition-colors"
+                                                        >
+                                                            X
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setDeleteConfirm(article.id)}
+                                                        className="inline-flex items-center justify-center w-9 h-9 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                )}
+                                                <Link
+                                                    to={`/articles/${article.slug}`}
+                                                    target="_blank"
+                                                    className="inline-flex items-center justify-center w-9 h-9 text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/10 rounded-lg transition-colors"
+                                                    title="View Publicly"
+                                                >
+                                                    👁️
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

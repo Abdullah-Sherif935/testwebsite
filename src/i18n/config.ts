@@ -9,11 +9,16 @@ i18n
     .use(initReactI18next)
     .init({
         fallbackLng: 'ar',
-        lng: 'ar', // Default to Arabic
+        supportedLngs: ['ar', 'en'],
         debug: import.meta.env.DEV,
 
         interpolation: {
             escapeValue: false, // not needed for react as it escapes by default
+        },
+
+        detection: {
+            order: ['localStorage', 'navigator'],
+            caches: ['localStorage']
         },
 
         backend: {

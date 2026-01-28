@@ -3,14 +3,14 @@ import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
 import type { Article } from '../../types/article';
 import { fadeInUp, pageTransition } from '../../utils/animations';
 import { UserProfileForm } from './UserProfileForm';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
-import { getUserProfile, type UserProfile } from '../../services/profile';
-import { uploadProfilePicture } from '../../services/verification';
+import { getUserProfile, type UserProfile, deleteUserAccount } from '../../services/profile';
+import { uploadProfilePicture, deleteProfilePicture } from '../../services/verification';
 import { getAuthorStats } from '../../services/articles';
 
 export function Profile() {
@@ -35,7 +35,14 @@ export function Profile() {
         return { total_ratings: 0, average_rating: 0 };
     });
     const [isInitialLoading, setIsInitialLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'info' | 'articles' | 'cv'>('info');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'info';
+    const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
+
+    const setActiveTab = (tab: string) => {
+        setSearchParams({ tab });
+    };
+
     const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
         // Load from cache instantly to prevent flicker
         if (user) {
@@ -51,6 +58,8 @@ export function Profile() {
         return null;
     });
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [deletingAvatar, setDeletingAvatar] = useState(false);
+    const [deletingAccount, setDeletingAccount] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -140,6 +149,54 @@ export function Profile() {
         }
     }
 
+    async function handleAvatarDelete() {
+        if (!user) return;
+        if (!window.confirm(isArabic ? 'هل أنت متأكد من حذف الصورة الشخصية؟' : 'Are you sure you want to remove your profile picture?')) return;
+
+        setDeletingAvatar(true);
+        try {
+            await deleteProfilePicture(user.id);
+            alert(isArabic ? '✅ تم حذف الصورة' : '✅ Picture removed');
+            window.location.reload();
+        } catch (err: any) {
+            alert(err.message || (isArabic ? '❌ فشل الحذف' : '❌ Failed to remove'));
+            setDeletingAvatar(false);
+        }
+    }
+
+    async function handleDeleteAccount() {
+        if (!user) return;
+        const confirmMsg = isArabic
+            ? '⚠️ تحذير: هذا الإجراء لا يمكن التراجع عنه.\nسيتم حذف حسابك وجميع مقالاتك وبياناتك نهائياً.\n\nهل أنت متأكد تماماً؟'
+            : '⚠️ WARNING: This action cannot be undone.\nYour account, articles, and all data will be permanently deleted.\n\nAre you sure completely?';
+
+        if (!window.confirm(confirmMsg)) return;
+
+        const doubleConfirm = prompt(isArabic ? 'للتأكيد، اكتب "حذف" في المربع أدناه:' : 'To confirm, type "DELETE" below:');
+        if (doubleConfirm !== (isArabic ? 'حذف' : 'DELETE')) return;
+
+        setDeletingAccount(true);
+        try {
+            await deleteUserAccount();
+            await signOut();
+
+            // Clear storage but preserve preferences
+            const currentLang = localStorage.getItem('i18nextLng');
+            const currentTheme = localStorage.getItem('vite-ui-theme');
+
+            localStorage.clear();
+            sessionStorage.clear();
+
+            if (currentLang) localStorage.setItem('i18nextLng', currentLang);
+            if (currentTheme) localStorage.setItem('vite-ui-theme', currentTheme);
+
+            window.location.href = '/';
+        } catch (err: any) {
+            alert(err.message || (isArabic ? '❌ فشل حذف الحساب' : '❌ Failed to delete account'));
+            setDeletingAccount(false);
+        }
+    }
+
 
     const handleSignOut = async () => {
         try {
@@ -147,8 +204,16 @@ export function Profile() {
         } catch (err) {
             console.error(err);
         } finally {
+            // Clear storage but preserve preferences
+            const currentLang = localStorage.getItem('i18nextLng');
+            const currentTheme = localStorage.getItem('vite-ui-theme');
+
             localStorage.clear();
             sessionStorage.clear();
+
+            if (currentLang) localStorage.setItem('i18nextLng', currentLang);
+            if (currentTheme) localStorage.setItem('vite-ui-theme', currentTheme);
+
             window.location.href = '/';
         }
     };
@@ -158,15 +223,25 @@ export function Profile() {
         return null;
     }
 
+    const displayName = isArabic
+        ? (userProfile?.full_name_ar || userProfile?.full_name_en)
+        : (userProfile?.full_name_en || userProfile?.full_name_ar);
+
     const userData = {
-        name: user.user_metadata?.full_name || user.email?.split('@')[0] || (isArabic ? 'مستخدم' : 'User'),
+        name: displayName || user.user_metadata?.full_name || user.email?.split('@')[0] || (isArabic ? 'مستخدم' : 'User'),
         email: user.email,
-        avatar: user.user_metadata?.avatar_url || null,
+        avatar: userProfile?.avatar_url || user.user_metadata?.avatar_url || null,
         joined: new Date(user.created_at).toLocaleDateString(isArabic ? 'ar' : 'en', { year: 'numeric', month: 'long' })
     };
 
-    const getStatusInfo = (status: Article['moderation_status']) => {
-        switch (status) {
+    const getStatusInfo = (article: Article) => {
+        if (article.status === 'deleted_by_admin') {
+            return { label: isArabic ? 'محذوف من الإدارة' : 'Deleted by Admin', color: 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-300', icon: '🗑️' };
+        }
+        if (article.status === 'draft') {
+            return { label: isArabic ? 'مسودة' : 'Draft', color: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-400', icon: '📝' };
+        }
+        switch (article.moderation_status) {
             case 'pending':
                 return { label: isArabic ? 'قيد المراجعة' : 'Pending', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', icon: '⏳' };
             case 'approved':
@@ -174,7 +249,7 @@ export function Profile() {
             case 'rejected':
                 return { label: isArabic ? 'مرفوض' : 'Rejected', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: '❌' };
             default:
-                return { label: status, color: 'bg-slate-100 text-slate-700', icon: '📄' };
+                return { label: article.moderation_status, color: 'bg-slate-100 text-slate-700', icon: '📄' };
         }
     };
 
@@ -196,7 +271,13 @@ export function Profile() {
                     variants={fadeInUp}
                 >
                     <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
-                        <div className="relative w-32 h-32 group">
+                        <div
+                            className="relative w-32 h-32 group cursor-pointer"
+                            onClick={() => setIsAvatarMenuOpen(!isAvatarMenuOpen)}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={isArabic ? 'تغيير الصورة الشخصية' : 'Change profile picture'}
+                        >
                             {userProfile?.avatar_url ? (
                                 <img src={userProfile.avatar_url} alt="" className="w-full h-full rounded-full border-4 border-blue-600/20 object-cover" />
                             ) : userData.avatar ? (
@@ -209,22 +290,31 @@ export function Profile() {
 
                             {/* Verified Badge */}
                             {userProfile?.is_verified ? (
-                                <div className="absolute bottom-0 right-0">
+                                <div className="absolute bottom-0 right-0 z-20">
                                     <VerifiedBadge size="lg" className="bg-white dark:bg-slate-900 rounded-full p-1" />
                                 </div>
                             ) : (
-                                <div className="absolute bottom-0 right-0 w-8 h-8 bg-emerald-500 border-4 border-white dark:border-slate-900 rounded-full" title="Online"></div>
+                                <div className="absolute bottom-0 right-0 w-8 h-8 bg-emerald-500 border-4 border-white dark:border-slate-900 rounded-full z-20" title="Online"></div>
                             )}
 
-                            {/* Upload Button Overlay */}
-                            <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            {/* Upload/Remove Button Overlay */}
+                            <div className={`absolute inset-0 bg-slate-900/70 backdrop-blur-sm rounded-full flex flex-col items-center justify-center gap-2 transition-all duration-200 z-10 ${isAvatarMenuOpen ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95 md:group-hover:opacity-100 md:group-hover:visible md:group-hover:scale-100'}`}>
                                 <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={uploadingAvatar}
-                                    className="px-3 py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold hover:bg-slate-100 transition-all disabled:opacity-50"
+                                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                                    disabled={uploadingAvatar || deletingAvatar}
+                                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition-all w-20 flex items-center justify-center gap-1 backdrop-blur-md border border-white/20"
                                 >
-                                    {uploadingAvatar ? '...' : (isArabic ? '📷 تغيير' : '📷 Change')}
+                                    <span>{isArabic ? 'تعديل' : 'Edit'}</span> <span>📷</span>
                                 </button>
+                                {(userProfile?.avatar_url || userData.avatar) && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleAvatarDelete(); }}
+                                        disabled={uploadingAvatar || deletingAvatar}
+                                        className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-lg text-xs font-bold transition-all w-20 flex items-center justify-center gap-1 backdrop-blur-md border border-red-500/20"
+                                    >
+                                        <span>{isArabic ? 'حذف' : 'Delete'}</span> <span>🗑️</span>
+                                    </button>
+                                )}
                             </div>
 
                             {/* Hidden File Input */}
@@ -310,55 +400,76 @@ export function Profile() {
                     </div>
 
                     {activeTab === 'info' ? (
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-                                    {isArabic ? 'معلومات الحساب' : 'Account Info'}
-                                </h3>
-                                <div className="space-y-4 text-sm">
-                                    <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800">
-                                        <span className="text-slate-500">{isArabic ? 'الاسم' : 'Name'}</span>
-                                        <span className="font-bold text-slate-700 dark:text-slate-300">{userData.name}</span>
+                        <div className="space-y-8">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                                        {isArabic ? 'معلومات الحساب' : 'Account Info'}
+                                    </h3>
+                                    <div className="space-y-4 text-sm">
+                                        <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800">
+                                            <span className="text-slate-500">{isArabic ? 'الاسم' : 'Name'}</span>
+                                            <span className="font-bold text-slate-700 dark:text-slate-300">{userData.name}</span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800">
+                                            <span className="text-slate-500">{isArabic ? 'البريد' : 'Email'}</span>
+                                            <span className="font-bold text-slate-700 dark:text-slate-300">{userData.email}</span>
+                                        </div>
+                                        <div className="flex justify-between py-2">
+                                            <span className="text-slate-500">{isArabic ? 'طريقة التسجيل' : 'Login Provider'}</span>
+                                            <span className="font-bold text-slate-700 dark:text-slate-300 uppercase">{user.app_metadata.provider}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-800">
-                                        <span className="text-slate-500">{isArabic ? 'البريد' : 'Email'}</span>
-                                        <span className="font-bold text-slate-700 dark:text-slate-300">{userData.email}</span>
-                                    </div>
-                                    <div className="flex justify-between py-2">
-                                        <span className="text-slate-500">{isArabic ? 'طريقة التسجيل' : 'Login Provider'}</span>
-                                        <span className="font-bold text-slate-700 dark:text-slate-300 uppercase">{user.app_metadata.provider}</span>
+                                </div>
+
+                                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                                        {isArabic ? 'تفاعلاتك' : 'Your Activity'}
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-center">
+                                            <div className="text-2xl mb-1">🔖</div>
+                                            <div className="text-xs text-slate-500 uppercase">{isArabic ? 'المحفوظة' : 'Saved'}</div>
+                                            <div className="font-bold text-slate-900 dark:text-white text-xl min-h-[28px] flex items-center justify-center">
+                                                {isInitialLoading && stats.saved === 0 ? (
+                                                    <div className="w-8 h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded" />
+                                                ) : (
+                                                    stats.saved
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-center">
+                                            <div className="text-2xl mb-1">✅</div>
+                                            <div className="text-xs text-slate-500 uppercase">{isArabic ? 'مقروءة' : 'Read'}</div>
+                                            <div className="font-bold text-slate-900 dark:text-white text-xl min-h-[28px] flex items-center justify-center">
+                                                {isInitialLoading && stats.read === 0 ? (
+                                                    <div className="w-8 h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded" />
+                                                ) : (
+                                                    stats.read
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-                                    {isArabic ? 'تفاعلاتك' : 'Your Activity'}
+                            {/* Danger Zone */}
+                            <div className="p-6 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-200 dark:border-red-900/30">
+                                <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-2">
+                                    {isArabic ? 'منطقة الخطر' : 'Danger Zone'}
                                 </h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-center">
-                                        <div className="text-2xl mb-1">🔖</div>
-                                        <div className="text-xs text-slate-500 uppercase">{isArabic ? 'المحفوظة' : 'Saved'}</div>
-                                        <div className="font-bold text-slate-900 dark:text-white text-xl min-h-[28px] flex items-center justify-center">
-                                            {isInitialLoading && stats.saved === 0 ? (
-                                                <div className="w-8 h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded" />
-                                            ) : (
-                                                stats.saved
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-center">
-                                        <div className="text-2xl mb-1">✅</div>
-                                        <div className="text-xs text-slate-500 uppercase">{isArabic ? 'مقروءة' : 'Read'}</div>
-                                        <div className="font-bold text-slate-900 dark:text-white text-xl min-h-[28px] flex items-center justify-center">
-                                            {isInitialLoading && stats.read === 0 ? (
-                                                <div className="w-8 h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded" />
-                                            ) : (
-                                                stats.read
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">
+                                    {isArabic
+                                        ? 'حذف الحساب سيؤدي إلى إزالة جميع بياناتك ومقالاتك نهائياً. لا يمكن التراجع عن هذا الإجراء.'
+                                        : 'Deleting your account will permanently remove all your data and articles. This action cannot be undone.'}
+                                </p>
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    disabled={deletingAccount}
+                                    className="px-6 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {deletingAccount ? (isArabic ? 'جاري الحذف...' : 'Deleting...') : (isArabic ? '🗑️ حذف الحساب نهائياً' : '🗑️ Delete Account Permanently')}
+                                </button>
                             </div>
                         </div>
                     ) : activeTab === 'cv' ? (
@@ -390,7 +501,7 @@ export function Profile() {
                             ) : (
                                 <div className="grid gap-4">
                                     {userArticles.map(article => {
-                                        const status = getStatusInfo(article.moderation_status);
+                                        const status = getStatusInfo(article);
                                         return (
                                             <div
                                                 key={article.id}
@@ -405,7 +516,12 @@ export function Profile() {
                                                     </div>
                                                     <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-1">{article.title}</h3>
                                                     {article.moderation_note && (
-                                                        <p className="text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/10 p-2 rounded-lg border border-red-100 dark:border-red-900/30 mt-2">
+                                                        <p className={`text-xs p-2 rounded-lg border mt-2 ${article.moderation_status === 'approved'
+                                                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30'
+                                                            : article.moderation_status === 'rejected'
+                                                                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30'
+                                                                : 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30'
+                                                            }`}>
                                                             <strong>{isArabic ? 'ملاحظة الإدارة: ' : 'Admin Note: '}</strong>
                                                             {article.moderation_note}
                                                         </p>

@@ -417,11 +417,12 @@ export async function adminGetStats() {
             status,
             user_id
         `)
-        .neq('status', 'draft');
+        .neq('status', 'draft')
+        .neq('status', 'deleted_by_admin');
 
     if (error) {
         console.error('Error fetching stats:', error);
-        return { published: 0, total: 0, pending: 0, rejected: 0 };
+        return { published: 0, total: 0, pending: 0, rejected: 0, authors: 0 };
     }
 
     const stats = {
@@ -429,6 +430,7 @@ export async function adminGetStats() {
         total: data.length,
         pending: data.filter(a => a.moderation_status === 'pending').length,
         rejected: data.filter(a => a.moderation_status === 'rejected').length,
+        authors: new Set(data.map(a => a.user_id).filter(Boolean)).size
     };
 
     return stats;
@@ -454,10 +456,9 @@ export async function adminGetApprovedArticles() {
 
 
 export async function adminDeleteArticle(articleId: string) {
-    return await adminSupabase
-        .from('articles')
-        .delete()
-        .eq('id', articleId);
+    return await adminSupabase.rpc('admin_soft_delete_article', {
+        target_article_id: articleId
+    });
 }
 
 export async function adminGetArticleById(articleId: string) {
@@ -490,7 +491,8 @@ export async function adminGetAuthorsStats() {
             status,
             author:user_profiles (id, full_name_ar, avatar_url)
         `)
-        .neq('status', 'draft');
+        .neq('status', 'draft')
+        .neq('status', 'deleted_by_admin');
 
     if (error) {
         console.error('Error fetching authors stats:', error);
@@ -500,19 +502,21 @@ export async function adminGetAuthorsStats() {
     const authorMap = new Map();
 
     data.forEach((article: any) => {
+        const userId = article.user_id;
+        if (!userId) return;
+
         let p = article.author;
         if (Array.isArray(p)) p = p[0];
-        if (!p) return;
 
-        if (!authorMap.has(p.id)) {
-            authorMap.set(p.id, {
-                id: p.id,
-                name: p.full_name_ar || 'Unknown',
-                avatar_url: p.avatar_url,
+        if (!authorMap.has(userId)) {
+            authorMap.set(userId, {
+                id: userId, // Use the Auth ID that links to articles, NOT the Profile ID
+                name: p?.full_name_ar || 'Unknown',
+                avatar_url: p?.avatar_url,
                 articleCount: 0
             });
         }
-        authorMap.get(p.id).articleCount++;
+        authorMap.get(userId).articleCount++;
     });
 
     return Array.from(authorMap.values());
@@ -521,11 +525,10 @@ export async function adminGetAuthorsStats() {
 export async function adminGetArticlesByAuthor(userId: string) {
     const { data, error } = await adminSupabase
         .from('articles')
-        .select(`
-            *,
-            author:user_profiles (full_name_ar, email, avatar_url)
-        `)
+        .select('*')
         .eq('user_id', userId)
+        .neq('status', 'draft')
+        .neq('status', 'deleted_by_admin')
         .order('created_at', { ascending: false });
 
     if (error) throw error;

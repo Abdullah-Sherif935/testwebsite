@@ -392,6 +392,11 @@ export async function deleteProfilePicture(userId: string): Promise<void> {
             .eq('user_id', userId);
 
         if (updateError) throw updateError;
+
+        // Also update Auth metadata to remove avatar
+        await supabase.auth.updateUser({
+            data: { avatar_url: null }
+        });
     } catch (err) {
         console.error('Error deleting profile picture:', err);
         throw err;

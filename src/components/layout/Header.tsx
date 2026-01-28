@@ -55,6 +55,15 @@ export function Header() {
     });
     const [isVerifiedLoading, setIsVerifiedLoading] = useState(true);
 
+    const [profileNames, setProfileNames] = useState<{ ar: string; en: string } | null>(() => {
+        if (user) {
+            const ar = localStorage.getItem(`name_ar_${user.id}`);
+            const en = localStorage.getItem(`name_en_${user.id}`);
+            if (ar || en) return { ar: ar || '', en: en || '' };
+        }
+        return null;
+    });
+
     useEffect(() => {
         if (user) {
             setIsVerifiedLoading(true);
@@ -62,11 +71,21 @@ export function Header() {
                 const verified = !!profile?.is_verified;
                 setIsVerified(verified);
                 setProfileAvatar(profile?.avatar_url || null);
+
+                const names = {
+                    ar: profile?.full_name_ar || '',
+                    en: profile?.full_name_en || ''
+                };
+                setProfileNames(names);
+
                 // Cache results
                 localStorage.setItem(`verified_${user.id}`, String(verified));
                 if (profile?.avatar_url) {
                     localStorage.setItem(`avatar_${user.id}`, profile.avatar_url);
                 }
+                if (names.ar) localStorage.setItem(`name_ar_${user.id}`, names.ar);
+                if (names.en) localStorage.setItem(`name_en_${user.id}`, names.en);
+
                 setIsVerifiedLoading(false);
             }).catch(() => {
                 setIsVerifiedLoading(false);
@@ -74,8 +93,25 @@ export function Header() {
         } else {
             setIsVerifiedLoading(false);
             setIsVerified(false);
+            setProfileNames(null);
         }
     }, [user]);
+
+    const displayGreeting = () => {
+        if (!user || !profileNames) return t('app.title');
+
+        // Determine name based on language preference & availability
+        // If Arabic Interface: Prefer Arabic Name -> English Name -> Default
+        // If English Interface: Prefer English Name -> Arabic Name -> Default
+
+        const name = isArabic
+            ? (profileNames.ar || profileNames.en)
+            : (profileNames.en || profileNames.ar);
+
+        if (!name) return t('app.title');
+
+        return isArabic ? `أهلاً ${name}` : `Welcome ${name}`;
+    };
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -90,10 +126,15 @@ export function Header() {
         } catch (err) {
             console.error('Sign out error:', err);
         } finally {
-            // NUCLEAR OPTION: Manually force clear all storage
-            // This ensures potential stuck tokens are removed regardless of API success
+            // Clear storage but preserve preferences
+            const currentLang = localStorage.getItem('i18nextLng');
+            const currentTheme = localStorage.getItem('vite-ui-theme');
+
             localStorage.clear();
             sessionStorage.clear();
+
+            if (currentLang) localStorage.setItem('i18nextLng', currentLang);
+            if (currentTheme) localStorage.setItem('vite-ui-theme', currentTheme);
 
             // Force hard reload
             window.location.href = '/';
@@ -164,9 +205,9 @@ export function Header() {
                         </div>
                     )}
 
-                    {/* 2. Logo */}
-                    <Link to="/" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white shrink-0">
-                        {t('app.title')}
+                    {/* 2. Logo / Greeting */}
+                    <Link to="/" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white shrink-0 truncate max-w-[200px] sm:max-w-none">
+                        {displayGreeting()}
                     </Link>
 
                     {/* 3. YouTube */}
@@ -174,7 +215,7 @@ export function Header() {
                         href="https://youtube.com/@engabdullah-sherif"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-600/10 text-red-600 dark:text-red-500 hover:bg-red-600 hover:text-white transition-all duration-300 font-medium text-sm"
+                        className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full bg-red-600/10 text-red-600 dark:text-red-500 hover:bg-red-600 hover:text-white transition-all duration-300 font-medium text-sm"
                     >
                         <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                             <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
@@ -183,52 +224,56 @@ export function Header() {
                     </a>
 
                     {/* 4. Login Button (Last in DOM = Leftmost in RTL) */}
-                    {!user && (
-                        <Link
-                            to="/auth"
-                            className="flex px-2.5 py-1 sm:px-4 sm:py-1.5 bg-blue-600 text-white text-[10px] sm:text-xs font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 shrink-0"
-                        >
-                            {isArabic ? 'دخول' : 'Login'}
-                        </Link>
-                    )}
-                </div>
+                    {
+                        !user && (
+                            <Link
+                                to="/auth"
+                                className="flex px-2.5 py-1 sm:px-4 sm:py-1.5 bg-blue-600 text-white text-[10px] sm:text-xs font-bold rounded-full hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 shrink-0"
+                            >
+                                {isArabic ? 'دخول' : 'Login'}
+                            </Link>
+                        )
+                    }
+                </div >
 
                 {/* CENTER: Desktop Nav */}
-                <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-                    {navItems.map((item) => {
-                        const active = isActive(item.to);
-                        return (
-                            <Link
-                                key={item.label}
-                                to={item.to}
-                                className="relative group py-2"
-                            >
-                                <motion.span
-                                    className={`block text-xs lg:text-sm font-semibold transition-colors duration-200 ${active
-                                        ? 'text-blue-600 dark:text-blue-400'
-                                        : 'text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                                        }`}
-                                    whileHover={{ scale: 1.05 }}
-                                    transition={{ duration: 0.2 }}
+                < nav className="hidden md:flex items-center gap-6 lg:gap-8" >
+                    {
+                        navItems.map((item) => {
+                            const active = isActive(item.to);
+                            return (
+                                <Link
+                                    key={item.label}
+                                    to={item.to}
+                                    className="relative group py-2"
                                 >
-                                    {item.label}
-                                </motion.span>
-                                <span className={`absolute inset-x-0 -bottom-1 h-0.5 bg-blue-600 dark:bg-blue-400 transition-transform duration-300 ${active ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
-                                    } origin-left`} />
-                            </Link>
-                        );
-                    })}
-                </nav>
+                                    <motion.span
+                                        className={`block text-xs lg:text-sm font-semibold transition-colors duration-200 ${active
+                                            ? 'text-blue-600 dark:text-blue-400'
+                                            : 'text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                            }`}
+                                        whileHover={{ scale: 1.05 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        {item.label}
+                                    </motion.span>
+                                    <span className={`absolute inset-x-0 -bottom-1 h-0.5 bg-blue-600 dark:bg-blue-400 transition-transform duration-300 ${active ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                                        } origin-left`} />
+                                </Link>
+                            );
+                        })
+                    }
+                </nav >
 
                 {/* RIGHT: User & Actions */}
-                <div className="flex items-center gap-1 sm:gap-3">
+                < div className="flex items-center gap-1 sm:gap-3" >
                     <motion.button
                         onClick={toggleTheme}
                         className="p-1.5 sm:p-2 rounded-full text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                         whileHover={buttonHover}
                         whileTap={buttonTap}
                     >
-                        {theme === 'dark' ? '☀️' : '🌙'}
+                        {theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? '☀️' : '🌙'}
                     </motion.button>
 
                     <Link to="/saved-articles">
@@ -265,73 +310,75 @@ export function Header() {
                             )}
                         </svg>
                     </motion.button>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Mobile Nav */}
             <AnimatePresence>
-                {isMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden z-40"
-                    >
-                        <div className="container mx-auto px-4 py-6 flex flex-col gap-2">
-                            {navItems.map((item) => {
-                                const active = isActive(item.to);
-                                return (
-                                    <Link
-                                        key={item.label}
-                                        to={item.to}
-                                        onClick={() => setIsMenuOpen(false)}
-                                        className={`px-4 py-3.5 rounded-xl font-semibold flex items-center justify-between ${active
-                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                            }`}
-                                    >
-                                        <span>{item.label}</span>
-                                        {active && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />}
-                                    </Link>
-                                );
-                            })}
-
-                            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
-                                {user ? (
-                                    <>
+                {
+                    isMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden z-40"
+                        >
+                            <div className="container mx-auto px-4 py-6 flex flex-col gap-2">
+                                {navItems.map((item) => {
+                                    const active = isActive(item.to);
+                                    return (
                                         <Link
-                                            to="/profile"
+                                            key={item.label}
+                                            to={item.to}
                                             onClick={() => setIsMenuOpen(false)}
-                                            className="px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-3"
+                                            className={`px-4 py-3.5 rounded-xl font-semibold flex items-center justify-between ${active
+                                                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                                }`}
                                         >
-                                            <span>👤</span> {isArabic ? 'الملف الشخصي' : 'Profile'}
+                                            <span>{item.label}</span>
+                                            {active && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />}
                                         </Link>
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleSignOut();
-                                            }}
-                                            className="w-full px-4 py-3.5 rounded-xl text-red-600 font-bold flex items-center gap-3 text-start hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                                    );
+                                })}
+
+                                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
+                                    {user ? (
+                                        <>
+                                            <Link
+                                                to="/profile"
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className="px-4 py-3.5 rounded-xl text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-3"
+                                            >
+                                                <span>👤</span> {isArabic ? 'الملف الشخصي' : 'Profile'}
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleSignOut();
+                                                }}
+                                                className="w-full px-4 py-3.5 rounded-xl text-red-600 font-bold flex items-center gap-3 text-start hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                                            >
+                                                <span>🚪</span> {isArabic ? 'تسجيل الخروج' : 'Sign Out'}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <Link
+                                            to="/auth"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className="px-4 py-4 rounded-xl bg-blue-600 text-white font-bold text-center"
                                         >
-                                            <span>🚪</span> {isArabic ? 'تسجيل الخروج' : 'Sign Out'}
-                                        </button>
-                                    </>
-                                ) : (
-                                    <Link
-                                        to="/auth"
-                                        onClick={() => setIsMenuOpen(false)}
-                                        className="px-4 py-4 rounded-xl bg-blue-600 text-white font-bold text-center"
-                                    >
-                                        {isArabic ? 'تسجيل الدخول' : 'Sign In'}
-                                    </Link>
-                                )}
+                                            {isArabic ? 'تسجيل الدخول' : 'Sign In'}
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </header>
+                        </motion.div>
+                    )
+                }
+            </AnimatePresence >
+        </header >
     );
 }

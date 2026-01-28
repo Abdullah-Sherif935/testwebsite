@@ -171,6 +171,7 @@ export interface UserProfile {
     verification_date?: string;
     created_at?: string;
     updated_at?: string;
+    last_name_update?: string;
 }
 
 /**
@@ -358,6 +359,19 @@ export async function downloadUserCV(userId: string): Promise<Blob | null> {
         return data;
     } catch (err) {
         console.error('Error downloading CV:', err);
+        throw err;
+    }
+}
+
+/**
+ * Delete user account permanently
+ */
+export async function deleteUserAccount(): Promise<void> {
+    try {
+        const { error } = await supabase.rpc('delete_own_account');
+        if (error) throw error;
+    } catch (err) {
+        console.error('Error deleting account:', err);
         throw err;
     }
 }
